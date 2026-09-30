@@ -1,0 +1,50 @@
+---
+// Perguntas frequentes da landing (27/09). Só respostas que o site atual sabe dar (plano-copy.md, seção 7.9).
+// Accordion livre (abre e fecha à vontade), mesmo estilo do Problema; comportamento em main.js (data-acc-free).
+import Icon from './Icon.astro';
+import { linkTo } from '../data/site.js';
+const { lang, t } = Astro.props;
+const f = t.faq;
+---
+<section id="faq" class="section section--ice" aria-labelledby="faq-title">
+  <div class="container faq">
+    <div class="section-head reveal">
+      <p class="eyebrow">{f.eyebrow}</p>
+      <h2 class="h2" id="faq-title">{f.title}</h2>
+    </div>
+    <div class="acc reveal" data-acc data-acc-free>
+      {f.items.map((it, i) => (
+        <div class="acc__item">
+          <h3>
+            <button class="acc__btn" type="button" id={`faq-btn-${i}`} aria-controls={`faq-panel-${i}`} aria-expanded="false" data-acc-btn data-index={i}>
+              <span class="acc__num">{String(i + 1).padStart(2, '0')}</span>
+              <span class="acc__title">{it.q}</span>
+              <span class="acc__sign" aria-hidden="true"></span>
+            </button>
+          </h3>
+          <div class="acc__panel" id={`faq-panel-${i}`} role="region" aria-labelledby={`faq-btn-${i}`}>
+            <div class="acc__inner">
+              <div class="acc__body">
+                {it.a.map((p) => <p>{p}</p>)}
+                {it.link && (
+                  <a class="faq__link" href={linkTo(lang, { page: it.link.page }, true)}>{it.link.label}<Icon name="arrow" size={18} /></a>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .faq { max-width: 900px; }
+  /* 30/09: no computador, título à esquerda (fica parado enquanto as perguntas rolam) e perguntas à direita */
+  @media (min-width: 1024px) {
+    .faq { max-width: calc(var(--container) + 2 * var(--gutter)); display: grid; grid-template-columns: 4fr 8fr; gap: clamp(40px, 6vw, 96px); align-items: start; }
+    .faq .section-head { position: sticky; top: calc(var(--nav-h) + 48px); margin-bottom: 0; }
+  }
+  .faq__link { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; color: var(--primary); text-decoration: none; }
+  .faq__link:hover { text-decoration: underline; }
+</style>

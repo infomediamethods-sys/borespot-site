@@ -1,0 +1,77 @@
+---
+import Icon from './Icon.astro';
+import { bookingHref } from '../data/site.js';
+const { lang, t } = Astro.props;
+const pr = t.process;
+const book = bookingHref(lang, true);
+const pos = ['top', 'right', 'bottom', 'left'];
+---
+<section id="process" class="section section--white" aria-labelledby="process-title">
+  <div class="container process__grid">
+    <div class="section-head reveal">
+      <p class="eyebrow">{pr.eyebrow}</p>
+      <h2 class="h2" id="process-title">{pr.title}</h2>
+      <p class="lead">{pr.lead}</p>
+      {pr.cta && <a class="btn btn--primary process__cta" href={book} data-book>{pr.cta}<Icon name="arrow" /></a>}
+    </div>
+
+    <div class="cycle" data-cycle>
+      <svg class="cycle__svg" viewBox="0 0 400 400" aria-hidden="true">
+        <circle class="cycle__track" cx="200" cy="200" r="150" />
+        <circle class="cycle__arc" cx="200" cy="200" r="150" pathLength="100" transform="rotate(-90 200 200)" />
+      </svg>
+      <p class="cycle__center">{pr.center.map((l) => <span>{l}</span>)}</p>
+      <ol class="cycle__steps">
+        {pr.steps.map((s, i) => (
+          <li class={`cycle__step cycle__step--${pos[i]}`} style={`--i:${i}`}>
+            <span class="cycle__n mono">{s.n}</span>
+            <h3 class="cycle__title">{s.title}</h3>
+            <p>{s.text}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </div>
+</section>
+
+<style>
+  .process__cta { margin-top: 28px; white-space: normal; text-align: center; line-height: 1.25; }
+  .process__grid { display: grid; grid-template-columns: 4fr 8fr; gap: clamp(32px, 5vw, 64px); align-items: center; }
+  .cycle { position: relative; width: 100%; max-width: 760px; aspect-ratio: 1 / 0.95; margin-inline: auto; }
+  .cycle__svg { position: absolute; left: 50%; top: 50%; width: 54%; transform: translate(-50%, -50%); overflow: visible; }
+  .cycle__track { fill: none; stroke: var(--border); stroke-width: 1.5; }
+  .cycle__arc { fill: none; stroke: var(--primary); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 100; stroke-dashoffset: 100; transition: stroke-dashoffset 2s var(--ease-out); }
+  .cycle.is-in .cycle__arc { stroke-dashoffset: 0; }
+  .cycle__center { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: grid; text-align: center; font-weight: 700; font-size: clamp(16px, 1.6vw, 20px); line-height: 1.25; letter-spacing: -0.01em; width: 32%; }
+  .cycle__center span:last-child { color: var(--primary); }
+  .cycle__step { position: absolute; width: 28%; background: var(--white); border: 1px solid var(--border); border-radius: var(--r); padding: 14px 16px; display: grid; gap: 6px; font-size: 14.5px; line-height: 1.45; color: var(--text-2); box-shadow: 0 8px 24px rgba(15, 23, 41, .06); }
+  html.js .cycle__step { opacity: 0; translate: 0 10px; transition: opacity .5s var(--ease-out), translate .5s var(--ease-out), border-color .4s; transition-delay: calc(var(--i) * 0.45s + 0.2s); }
+  html.js .cycle.is-in .cycle__step { opacity: 1; translate: 0 0; border-color: var(--primary); }
+  .cycle__n { font-size: 12px; font-weight: 700; letter-spacing: .12em; color: var(--primary); }
+  .cycle__title { font-size: 17px; font-weight: 700; color: var(--text); letter-spacing: -0.01em; line-height: 1.25; }
+  .cycle__step--top { left: 50%; top: 0; transform: translateX(-50%); }
+  .cycle__step--right { right: 0; top: 50%; transform: translateY(-50%); }
+  .cycle__step--bottom { left: 50%; bottom: 0; transform: translateX(-50%); }
+  .cycle__step--left { left: 0; top: 50%; transform: translateY(-50%); }
+
+  /* 30/09: no computador, título com mais espaço (quebra em menos linhas) e ciclo do tamanho da tela */
+  @media (min-width: 1024px) {
+    .process__grid { grid-template-columns: 5fr 7fr; }
+    .cycle { max-width: min(720px, calc((100vh - 150px) / 0.95)); }
+    .cycle__svg { width: 46%; }
+    .cycle__center { width: 28%; font-size: clamp(15px, 1.35vw, 19px); }
+    .cycle__step { width: 30%; }
+  }
+  @media (max-width: 1023px) {
+    .process__grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 767px) {
+    .cycle { aspect-ratio: auto; max-width: none; }
+    .cycle__svg, .cycle__center { display: none; }
+    .cycle__steps { display: grid; gap: 0; position: relative; padding-left: 28px; }
+    .cycle__steps::before { content: ""; position: absolute; left: 7px; top: 8px; bottom: 8px; width: 2px; background: var(--border); }
+    .cycle__step { position: relative; inset: auto; transform: none; width: auto; border: 0; box-shadow: none; padding: 0 0 28px; background: none; }
+    .cycle__step::before { content: ""; position: absolute; left: -27px; top: 3px; width: 14px; height: 14px; border-radius: 50%; background: var(--white); border: 2px solid var(--primary); }
+    html.js .cycle.is-in .cycle__step { border-color: transparent; }
+  }
+</style>

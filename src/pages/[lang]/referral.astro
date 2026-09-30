@@ -1,0 +1,197 @@
+---
+// Página do Referral Program: recriada com o texto exato do site atual (borespot.com/xx/referral), nas 3 línguas.
+import Base from '../../layouts/Base.astro';
+import Icon from '../../components/Icon.astro';
+import { LANGS } from '../../data/site.js';
+import { getT } from '../../i18n/index.js';
+
+export function getStaticPaths() {
+  return LANGS.map((lang) => ({ params: { lang } }));
+}
+const { lang } = Astro.params;
+const t = getT(lang);
+const r = t.referral;
+const fid = (name) => `r-${name}`;
+---
+<Base lang={lang} t={t} path="/referral" title={r.meta.title} description={r.meta.description}>
+  <section class="section section--dark ref-hero" aria-labelledby="ref-title">
+    <div class="container ref-hero__grid">
+      <div class="ref-hero__copy">
+        <p class="eyebrow">{r.eyebrow}</p>
+        <h1 class="h1 ref-hero__title" id="ref-title">{r.title}</h1>
+        {r.intro.map((p) => <p class="lead">{p}</p>)}
+        <div class="btn-row"><a class="btn btn--primary" href="#referral-form">{r.cta}<Icon name="arrow" /></a></div>
+      </div>
+      <div class="ref-hero__fit">
+        <p class="ref-hero__amount" aria-hidden="true">$500</p>
+        <p>{r.bestFit}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--white">
+    <div class="container ref-blocks">
+      {r.sections.map((b) => (
+        <div class="ref-block reveal">
+          <h2 class="h3">{b.title}</h2>
+          <p>{b.text}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section class="section section--soft" aria-labelledby="ref-how">
+    <div class="container">
+      <div class="section-head reveal">
+        <h2 class="h2" id="ref-how">{r.how.title}</h2>
+      </div>
+      <ol class="ref-steps">
+        {r.how.steps.map((s) => (
+          <li class="ref-step reveal">
+            <span class="ref-step__n mono">{s.n}</span>
+            <h3 class="h3">{s.title}</h3>
+            <p>{s.text}</p>
+          </li>
+        ))}
+      </ol>
+      <p class="ref-note reveal">{r.how.note}</p>
+      <blockquote class="ref-quote reveal"><p>“{r.how.quote}”</p></blockquote>
+    </div>
+  </section>
+
+  <section id="referral-form" class="section section--deep" aria-labelledby="ref-form-title">
+    <div class="container">
+      <div class="ref-card reveal">
+        <div class="ref-card__intro">
+          <h2 class="h3" id="ref-form-title">{r.form.title}</h2>
+          <p>{r.form.lead}</p>
+        </div>
+        <!-- PROVISÓRIO: destino do envio ainda não definido (mesmo FORM_ENDPOINT do formulário de contato). -->
+        <form class="form" data-form novalidate>
+          <input type="hidden" name="form" value="referral" />
+          <input type="hidden" name="language" value={lang} />
+          {r.form.groups.map((g) => (
+            <fieldset class="ref-group field--full">
+              {g.title && <legend class="ref-group__title mono">{g.title}</legend>}
+              <div class="form ref-group__fields">
+                {g.fields.map((f) => (
+                  <div class={`field ${f.full ? 'field--full' : ''}`}>
+                    <label for={fid(f.name)}>{f.label}</label>
+                    {f.type === 'textarea' ? (
+                      <textarea id={fid(f.name)} name={f.name} rows="4" required={f.required} placeholder={f.placeholder}></textarea>
+                    ) : f.type === 'select' ? (
+                      <select id={fid(f.name)} name={f.name} required={f.required}>
+                        <option value="">{f.placeholder}</option>
+                        {f.options.map((o) => <option value={o.value}>{o.label}</option>)}
+                      </select>
+                    ) : (
+                      <input id={fid(f.name)} name={f.name} type={f.type || 'text'} required={f.required} autocomplete={f.autocomplete} placeholder={f.placeholder} />
+                    )}
+                    {f.error && <p class="field__error">{f.error}</p>}
+                  </div>
+                ))}
+              </div>
+            </fieldset>
+          ))}
+          <div class="field field--full ref-consent">
+            <label class="ref-consent__label">
+              <input type="checkbox" name="consent" value="yes" required />
+              <span>{r.form.consent}</span>
+            </label>
+            {r.form.consentError && <p class="field__error">{r.form.consentError}</p>}
+          </div>
+          <div class="field--full form__foot">
+            <button class="btn btn--primary" type="submit">{r.form.submit}<Icon name="arrow" /></button>
+            <p class="form__status" role="status" aria-live="polite" data-form-status></p>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  {r.faq.items.length > 0 && (
+    <section class="section section--white" aria-labelledby="ref-faq">
+      <div class="container ref-faq">
+        <div class="section-head reveal">
+          <h2 class="h2" id="ref-faq">{r.faq.title}</h2>
+        </div>
+        <div class="acc reveal" data-acc data-acc-free>
+          {r.faq.items.map((it, i) => (
+            <div class="acc__item">
+              <h3>
+                <button class="acc__btn" type="button" id={`faq-btn-${i}`} aria-controls={`faq-panel-${i}`} aria-expanded="false" data-acc-btn data-index={i}>
+                  <span class="acc__num">0{i + 1}</span>
+                  <span class="acc__title">{it.q}</span>
+                  <span class="acc__sign" aria-hidden="true"></span>
+                </button>
+              </h3>
+              <div class="acc__panel" id={`faq-panel-${i}`} role="region" aria-labelledby={`faq-btn-${i}`}>
+                <div class="acc__inner"><div class="acc__body">{it.a.map((p) => <p>{p}</p>)}</div></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <section class="section section--soft" aria-labelledby="ref-terms">
+    <div class="container">
+      <div class="section-head reveal">
+        <h2 class="h2" id="ref-terms">{r.terms.title}</h2>
+      </div>
+      <dl class="ref-terms reveal">
+        {r.terms.items.map((it) => (
+          <div>
+            <dt>{it.title}</dt>
+            <dd>{it.text}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .ref-hero { padding-top: calc(var(--nav-h) + clamp(56px, 8vw, 112px)); }
+  .ref-hero__grid { display: grid; grid-template-columns: 7fr 5fr; gap: clamp(32px, 6vw, 88px); align-items: end; }
+  .ref-hero__copy { display: grid; gap: 22px; justify-items: start; }
+  .ref-hero__title { font-size: clamp(30px, 4.6vw, 60px); max-width: 12em; }
+  .ref-hero__copy .btn-row { margin-top: 8px; }
+  .ref-hero__fit { border: 1px solid var(--line-dark); border-radius: var(--r-lg); padding: clamp(24px, 3vw, 36px); display: grid; gap: 16px; background: rgba(3, 16, 43, .5); color: var(--on-dark-2); font-size: 17px; line-height: 1.55; }
+  .ref-hero__amount { font-family: var(--display); font-stretch: 125%; font-weight: 800; font-size: clamp(56px, 7vw, 96px); line-height: 1; color: var(--white); }
+
+  .ref-blocks { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(32px, 5vw, 64px) clamp(32px, 6vw, 88px); }
+  .ref-block { display: grid; gap: 14px; align-content: start; padding-top: 22px; border-top: 1px solid var(--border); }
+  .ref-block p { color: var(--text-2); font-size: 17px; line-height: 1.6; }
+
+  .ref-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .ref-step { background: var(--white); border: 1px solid var(--border); border-radius: var(--r); padding: clamp(22px, 3vw, 32px); display: grid; gap: 12px; align-content: start; }
+  .ref-step__n { font-size: 13px; font-weight: 700; letter-spacing: .12em; color: var(--primary); }
+  .ref-step p { color: var(--text-2); }
+  .ref-note { margin-top: 32px; max-width: 46em; color: var(--text-2); font-size: 17px; }
+  .ref-quote { margin: clamp(40px, 6vw, 72px) 0 0; max-width: 30em; }
+  .ref-quote p { font-weight: 700; font-size: clamp(22px, 2.6vw, 34px); line-height: 1.25; letter-spacing: -0.02em; color: var(--text); }
+
+  .ref-card { background: var(--white); color: var(--text); border-radius: var(--r-lg); padding: clamp(24px, 4vw, 48px); display: grid; grid-template-columns: 4fr 8fr; gap: clamp(24px, 4vw, 56px); }
+  .ref-card__intro { display: grid; gap: 12px; align-content: start; color: var(--text-2); }
+  .ref-card__intro .h3 { color: var(--text); font-size: clamp(22px, 2.2vw, 28px); }
+  .ref-group { border: 0; padding: 0; margin: 0; min-width: 0; display: grid; gap: 12px; }
+  .ref-group__title { font-size: 12px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; color: var(--primary); padding: 0; }
+  .ref-consent__label { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: start; font-weight: 400 !important; font-size: 14px !important; color: var(--text-2); line-height: 1.5; cursor: pointer; }
+  .ref-consent__label input { width: 20px; height: 20px; min-height: 0; margin-top: 2px; accent-color: var(--primary); }
+
+  .ref-faq { max-width: 900px; }
+
+  .ref-terms { display: grid; grid-template-columns: 1fr 1fr; gap: 28px clamp(32px, 5vw, 64px); }
+  .ref-terms dt { font-weight: 700; margin-bottom: 6px; }
+  .ref-terms dd { margin: 0; color: var(--text-2); font-size: 15px; line-height: 1.6; }
+
+  @media (max-width: 1023px) {
+    .ref-hero__grid, .ref-card { grid-template-columns: 1fr; }
+    .ref-steps { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 767px) {
+    .ref-blocks, .ref-terms { grid-template-columns: 1fr; }
+  }
+</style>

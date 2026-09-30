@@ -1,0 +1,154 @@
+---
+import Icon from './Icon.astro';
+import { withBase } from '../data/site.js';
+const { t } = Astro.props;
+// Rótulos do painel (Map Center, Layers, status...) são os da interface real do sistema, que é em inglês: ficam iguais em todos os idiomas.
+// Painel semelhante ao sistema real da Bore Spot (Map Center). Dados de exemplo de interface, não afirmações sobre a empresa.
+// Rotas desenhadas sobre as ruas da vista aérea: coordenadas no espaço da imagem (desktop 2400x1600, celular 1200x1600).
+const routesDesktop = [
+  { st: 'active', d: 'M900 0 C 896 240, 864 440, 850 660 S 930 960, 1030 1010' },
+  { st: 'cleared', d: 'M1030 1010 C 840 1070, 600 1150, 360 1220 S 90 1285, 0 1296' },
+  { st: 'delayed', d: 'M1030 1010 C 1200 1000, 1360 940, 1460 820 S 1515 450, 1520 300 S 1524 60, 1524 0' },
+  { st: 'waiting', d: 'M880 390 C 800 378, 720 360, 636 336', cycle: 'a' },
+  { st: 'renewal', d: 'M1860 1370 C 1930 1372, 2020 1374, 2100 1376', cycle: 'b' },
+];
+const routesMobile = [
+  { st: 'active', d: 'M617 780 C 617 900, 616 1040, 610 1180' },
+  { st: 'cleared', d: 'M606 1186 C 420 1205, 200 1228, 0 1246' },
+  { st: 'delayed', d: 'M626 1186 C 800 1190, 1000 1198, 1200 1206' },
+  { st: 'waiting', d: 'M500 722 A 90 90 0 1 1 680 722', cycle: 'a' },
+];
+const layers = [
+  ['260914-0412', 'active'], ['260914-0418', 'cleared'], ['260915-1107', 'waiting'], ['260915-1122', 'cleared'],
+  ['260916-0233', 'renewal'], ['260916-0240', 'delayed'], ['260917-0815', 'cleared'],
+];
+const legend = [
+  ['active', 'Active', 12], ['cleared', 'Cleared', 40], ['waiting', 'Waiting on Locate', 8], ['renewal', 'Renewal Due', 4], ['delayed', 'Delayed', 3],
+];
+---
+<div class="tpanel" data-tpanel aria-label={t.hero.panelLabel} role="img">
+  <div class="tpanel__top tpanel__chrome">
+    <img src={withBase('/img/brand/bore-spot-pin-96.png')} alt="" width="14" height="19" />
+    <span class="tpanel__app">Map Center</span>
+    <span class="tpanel__project mono">Project · North Loop</span>
+    <span class="tpanel__example mono">{t.ui.exampleView}</span>
+  </div>
+
+  <div class="tpanel__body">
+    <aside class="tpanel__side tpanel__chrome">
+      <p class="tpanel__label mono">Layers</p>
+      <ul>
+        {layers.map(([id, st]) => (
+          <li data-layer-status={st}><Icon name="eye" size={13} /><span class="mono">{id}</span><i class={`dot st-${st}`}></i></li>
+        ))}
+      </ul>
+    </aside>
+
+    <div class="tpanel__map" data-tpanel-map>
+      <picture>
+        <source media="(max-width: 640px)" srcset={`${withBase('/img/photos/ia-hero-vista-aerea-bairro-celular-700.webp')} 700w, ${withBase('/img/photos/ia-hero-vista-aerea-bairro-celular-1200.webp')} 1200w`} sizes="100vw" />
+        <img src={withBase('/img/photos/ia-hero-vista-aerea-bairro-desktop-1200.webp')} srcset={`${withBase('/img/photos/ia-hero-vista-aerea-bairro-desktop-1200.webp')} 1200w, ${withBase('/img/photos/ia-hero-vista-aerea-bairro-desktop-2400.webp')} 2400w`} sizes="(min-width: 1024px) 620px, 100vw" alt="" width="2400" height="1600" fetchpriority="high" />
+      </picture>
+      <div class="tpanel__shade"></div>
+      <svg class="tpanel__routes tpanel__routes--desktop" viewBox="0 0 2400 1600" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        {routesDesktop.map((r) => <path class={`troute st-${r.st}`} d={r.d} pathLength="100" data-cycle={r.cycle} />)}
+      </svg>
+      <svg class="tpanel__routes tpanel__routes--mobile" viewBox="0 0 1200 1600" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        {routesMobile.map((r) => <path class={`troute st-${r.st}`} d={r.d} pathLength="100" data-cycle={r.cycle} />)}
+      </svg>
+
+      <div class="tpanel__cards tpanel__chrome">
+        <div class="tcard tcard--kpi">
+          <p class="tcard__label mono">Active tickets</p>
+          <p class="tcard__kpi">175</p>
+          <svg class="tcard__spark" viewBox="0 0 120 28" aria-hidden="true"><path d="M0 22 L14 20 L26 23 L40 16 L54 18 L68 12 L82 14 L96 8 L108 10 L120 4" /></svg>
+        </div>
+        <ul class="tcard tcard--legend">
+          {legend.map(([st, label, n]) => (
+            <li><i class={`dot st-${st}`}></i><span>{label}</span><b class="mono" data-count={st}>{n}</b></li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="tpanel__tabs tpanel__chrome">
+    <span class="is-on"><Icon name="pin" size={16} />Map Center</span>
+    <span><Icon name="grid" size={16} />Dashboard</span>
+    <span><Icon name="receipt" size={16} />Receipts</span>
+    <span><Icon name="user" size={16} />Account</span>
+  </div>
+</div>
+
+<style>
+  .tpanel {
+    /* No fundo escuro, Cleared e Renewal Due usam tons mais claros da mesma família para ficarem legíveis */
+    --st-active: #2ECC71; --st-cleared: #3C82EB; --st-waiting: #F5B800; --st-renewal: #73D4F7; --st-delayed: #FF7A1A;
+    position: relative; width: 100%; height: 100%; flex: 1 1 auto; min-height: 0;
+    display: grid; grid-template-rows: auto 1fr auto;
+    background: #03102B; border: 1px solid var(--line-dark); border-radius: var(--r-lg); overflow: hidden;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, .35);
+    font-size: 12px; color: var(--white);
+  }
+  .tpanel__top { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--line-dark); }
+  .tpanel__top img { width: 14px; height: auto; }
+  .tpanel__app { font-weight: 700; font-size: 13px; }
+  .tpanel__project { color: var(--on-dark-2); font-size: 11px; letter-spacing: .06em; }
+  .tpanel__example { margin-left: auto; font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--sky); border: 1px solid var(--line-dark); padding: 3px 7px; border-radius: var(--r); }
+
+  .tpanel__body { display: grid; grid-template-columns: minmax(150px, 27%) 1fr; min-height: 0; }
+  .tpanel__side { border-right: 1px solid var(--line-dark); padding: 12px 10px; overflow: hidden; }
+  .tpanel__label { font-size: 10px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--on-dark-2); margin-bottom: 8px; }
+  .tpanel__side ul { display: grid; gap: 2px; }
+  .tpanel__side li { display: flex; align-items: center; gap: 8px; padding: 6px 6px; border-radius: var(--r); color: var(--on-dark-2); }
+  .tpanel__side li:first-child { background: rgba(115, 212, 247, .08); color: var(--white); }
+  .tpanel__side li span { font-size: 11px; flex: 1; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: block; flex: none; transition: background-color .6s; }
+  .dot.st-active { background: var(--st-active); } .dot.st-cleared { background: var(--st-cleared); } .dot.st-waiting { background: var(--st-waiting); }
+  .dot.st-renewal { background: var(--st-renewal); } .dot.st-delayed { background: var(--st-delayed); }
+
+  .tpanel__map { position: relative; overflow: hidden; min-height: 0; background: #0a1a36; }
+  .tpanel__map picture, .tpanel__map img { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .tpanel__map img { object-fit: cover; filter: saturate(.45) brightness(.62) contrast(1.08); }
+  .tpanel__shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(6, 28, 70, .35), rgba(6, 28, 70, .55)); mix-blend-mode: multiply; }
+  .tpanel__routes { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .tpanel__routes--mobile { display: none; }
+  .troute { fill: none; stroke-width: 20; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 100; stroke-dashoffset: 100; transition: stroke-dashoffset 1.6s var(--ease-out), stroke .8s; filter: drop-shadow(0 0 10px rgba(0, 0, 0, .45)); }
+  .tpanel__routes--mobile .troute { stroke-width: 16; }
+  .tpanel.is-live .troute { stroke-dashoffset: 0; }
+  .tpanel.is-live .troute:nth-child(2) { transition-delay: .25s, 0s; } .tpanel.is-live .troute:nth-child(3) { transition-delay: .5s, 0s; }
+  .tpanel.is-live .troute:nth-child(4) { transition-delay: .75s, 0s; } .tpanel.is-live .troute:nth-child(5) { transition-delay: 1s, 0s; }
+  .troute.st-active { stroke: var(--st-active); } .troute.st-cleared { stroke: var(--st-cleared); } .troute.st-waiting { stroke: var(--st-waiting); }
+  .troute.st-renewal { stroke: var(--st-renewal); } .troute.st-delayed { stroke: var(--st-delayed); }
+
+  .tpanel__cards { position: absolute; top: 12px; right: 12px; display: grid; gap: 8px; width: min(200px, 44%); }
+  .tcard { background: rgba(3, 16, 43, .86); border: 1px solid var(--line-dark); border-radius: var(--r); padding: 10px 12px; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+  .tcard__label { font-size: 9.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--on-dark-2); }
+  .tcard__kpi { font-size: 28px; font-weight: 500; line-height: 1.1; margin-top: 2px; }
+  .tcard__spark { width: 100%; height: 22px; margin-top: 4px; }
+  .tcard__spark path { fill: none; stroke: var(--st-active); stroke-width: 1.6; }
+  .tcard--legend { display: grid; gap: 5px; }
+  .tcard--legend li { display: flex; align-items: center; gap: 8px; font-size: 11.5px; }
+  .tcard--legend span { flex: 1; color: var(--on-dark-2); }
+  .tcard--legend b { font-weight: 700; font-size: 11.5px; }
+
+  .tpanel__tabs { display: flex; justify-content: space-around; border-top: 1px solid var(--line-dark); padding: 8px 6px; color: var(--on-dark-2); font-size: 11px; }
+  .tpanel__tabs span { display: flex; align-items: center; gap: 6px; }
+  .tpanel__tabs .is-on { color: var(--sky); }
+
+  @media (max-width: 1180px) and (min-width: 1024px) { .tpanel__body { grid-template-columns: 1fr; } .tpanel__side { display: none; } }
+  @media (max-width: 767px) {
+    .tpanel__body { grid-template-columns: 1fr; }
+    .tpanel__side { display: none; }
+    .tpanel__project { display: none; }
+    .tcard--kpi { display: none; }
+    .tpanel__cards { top: auto; bottom: 10px; left: 10px; right: auto; width: auto; }
+    .tcard--legend { grid-template-columns: repeat(2, auto); gap: 4px 12px; }
+    .tcard--legend li:nth-child(n+4) { display: none; }
+    .tpanel__tabs span { font-size: 0; gap: 0; }
+  }
+  @media (max-width: 640px) {
+    .tpanel__routes--desktop { display: none; }
+    .tpanel__routes--mobile { display: block; }
+  }
+</style>

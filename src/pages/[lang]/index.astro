@@ -1,0 +1,31 @@
+---
+import Base from '../../layouts/Base.astro';
+import IntroHero from '../../components/IntroHero.astro';
+import Logos from '../../components/Logos.astro';
+import Problem from '../../components/Problem.astro';
+import Services from '../../components/Services.astro';
+import Roles from '../../components/Roles.astro';
+import Why from '../../components/Why.astro';
+import Process from '../../components/Process.astro';
+import Faq from '../../components/Faq.astro';
+import Contact from '../../components/Contact.astro';
+import { LANGS } from '../../data/site.js';
+import { getT } from '../../i18n/index.js';
+
+export function getStaticPaths() {
+  return LANGS.map((lang) => ({ params: { lang } }));
+}
+const { lang } = Astro.params;
+const t = getT(lang);
+---
+<Base lang={lang} t={t} path="" intro>
+  <IntroHero lang={lang} t={t} />
+  <Logos t={t} />
+  <Problem t={t} />
+  <Services t={t} />
+  <Roles t={t} />
+  <Why t={t} />
+  <Process lang={lang} t={t} />
+  <Faq lang={lang} t={t} />
+  <Contact lang={lang} t={t} />
+</Base>

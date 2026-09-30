@@ -1,0 +1,26 @@
+---
+// A raiz leva para o inglês (/en/), como no site atual. Se a pessoa já escolheu outro idioma antes, leva para ele (decisão de 27/09).
+import { BASE, withBase } from '../data/site.js';
+
+const noindex = import.meta.env.PUBLIC_NOINDEX === 'true';
+const defaultUrl = withBase('/en/');
+---
+<!doctype html>
+<html lang="en" data-base={BASE}>
+  <head>
+    <meta charset="utf-8" />
+    <title>Bore Spot</title>
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+    <script is:inline define:vars={{ base: BASE }}>
+      try {
+        var s = localStorage.getItem('bs-lang');
+        if (s === 'es' || s === 'pt') location.replace(base + '/' + s + '/');
+      } catch (e) {}
+    </script>
+    <link rel="canonical" href="https://borespot.com/en/" />
+    <meta http-equiv="refresh" content={`0; url=${defaultUrl}`} />
+  </head>
+  <body>
+    <a href={defaultUrl}>Bore Spot</a>
+  </body>
+</html>

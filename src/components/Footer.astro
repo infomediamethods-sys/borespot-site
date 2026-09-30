@@ -1,0 +1,55 @@
+---
+import { site, LANGS, LANG_LABELS, linkTo, href, withBase } from '../data/site.js';
+const { lang, t, path = '' } = Astro.props;
+const isHome = path === '';
+const year = new Date().getFullYear();
+---
+<footer class="footer section--deep">
+  <div class="container footer__grid">
+    <div class="footer__brand">
+      <a class="lockup footer__lockup" href={isHome ? '#top' : href(lang, '/')} aria-label={isHome ? t.ui.backToTop : t.ui.home}>
+        <img class="lockup__pin" src={withBase('/img/brand/bore-spot-pin-96.png')} alt="" width="71" height="96" loading="lazy" />
+        <span class="lockup__word">Bore Spot</span>
+      </a>
+      <p>{t.footer.tagline}</p>
+      <nav class="footer__langs" aria-label={t.ui.language}>
+        {LANGS.map((l) => <a class="mono" href={href(l, path)} hreflang={l} lang={l} aria-current={l === lang ? 'true' : undefined}>{LANG_LABELS[l]}</a>)}
+      </nav>
+    </div>
+    <div>
+      <p class="footer__label mono">{t.footer.navTitle}</p>
+      <ul>{t.footer.nav.map((l) => <li><a href={linkTo(lang, l, isHome)}>{l.label}</a></li>)}</ul>
+    </div>
+    <div>
+      <p class="footer__label mono">{t.footer.contactTitle}</p>
+      <ul>
+        <li><a href={site.phoneHref}>{site.phone}</a></li>
+        <li><a href={`mailto:${site.email}`}>{site.email}</a></li>
+      </ul>
+    </div>
+    <div>
+      <p class="footer__label mono">{t.footer.legalTitle}</p>
+      <ul>{t.footer.legal.map((l) => <li><a href={linkTo(lang, l, isHome)}>{l.label}</a></li>)}</ul>
+    </div>
+  </div>
+  <div class="container footer__bottom">
+    <p>© {year} {site.legalName}. {t.footer.rights}</p>
+  </div>
+</footer>
+
+<style>
+  .footer { padding-block: 72px 32px; color: var(--on-dark-2); font-size: 15px; }
+  .footer__grid { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr; gap: 40px; }
+  .footer__brand { display: grid; gap: 16px; align-content: start; max-width: 340px; }
+  .footer__lockup { font-size: 20px; }
+  .footer__label { font-size: 12px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; color: var(--sky); margin-bottom: 14px; }
+  .footer ul { display: grid; gap: 10px; }
+  .footer a:not(.lockup) { text-decoration: none; color: var(--on-dark-2); transition: color .2s; }
+  .footer a:not(.lockup):hover { color: var(--white); }
+  .footer__langs { display: flex; gap: 6px; margin-top: 4px; }
+  .footer__langs a { font-size: 12px; font-weight: 700; letter-spacing: .1em; padding: 6px 9px; border: 1px solid var(--line-dark); border-radius: var(--r); }
+  .footer__langs a[aria-current] { color: var(--white); border-color: var(--sky); }
+  .footer__bottom { margin-top: 56px; padding-top: 24px; border-top: 1px solid var(--line-dark); font-size: 13px; }
+  @media (max-width: 900px) { .footer__grid { grid-template-columns: 1fr 1fr; } .footer__brand { grid-column: 1 / -1; } }
+  @media (max-width: 520px) { .footer__grid { grid-template-columns: 1fr; } }
+</style>

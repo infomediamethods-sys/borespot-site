@@ -1,0 +1,158 @@
+---
+// Serviços. 29/09: linha do tempo no lugar das fases empilhadas. 30/09 (Armin): no lugar do mapa ilustrativo, um ticket
+// que atravessa as 3 fases recebendo carimbos e sai fechado, em loop (esboço aprovado: elemento-servicos-ticket.html).
+// No computador o cartão anda por cima das colunas da linha do tempo; no tablet e no celular fica centralizado.
+// A animação fica em main.js (initTicket). Status do cartão: rótulos do sistema, em inglês nas 3 línguas.
+import Icon from './Icon.astro';
+const { t } = Astro.props;
+const sv = t.services;
+const tk = sv.ticket;
+// Posição (%) e inclinação de cada carimbo no cartão; o último é o grande "fechado"
+const SPOTS = [[27, 50, -5], [70, 51, 3], [27, 65, 3], [70, 66, -4], [27, 80, -2], [70, 81, 4], [48, 94, -3], [50, 20, -8]];
+const INK = ['blue', 'blue', 'blue', 'green', 'green', 'red', 'red', 'green'];
+---
+<section id="services" class="section section--dark" aria-labelledby="services-title">
+  <div class="container">
+    <div class="svc-top">
+    <div class="section-head reveal">
+      <p class="eyebrow">{sv.eyebrow}</p>
+      <h2 class="h2" id="services-title">{sv.title}</h2>
+      <p class="lead">{sv.lead}</p>
+    </div>
+
+    <div class="tkt" data-ticket aria-hidden="true">
+      <div class="tkt__card" data-tcard>
+        <article class="tkt__paper" data-tpaper>
+          <header class="tkt__head">
+            <p class="tkt__title mono">
+              <span class="tkt__pin"><svg width="14" height="16" viewBox="0 0 14 16" fill="none"><path d="M7 15.5C4.5 12.3 1 9.1 1 6a6 6 0 0 1 12 0c0 3.1-3.5 6.3-6 9.5Z" fill="#44A4EE"/><path d="M4.6 6.2l1.7 1.7L9.6 4.6" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              {tk.title}
+            </p>
+            <span class="tkt__chip mono"><i data-tchip></i><b data-tchip-text>Waiting on Locate</b></span>
+          </header>
+          <div class="tkt__body">
+            <div class="sk w1"></div><div class="sk w2"></div><div class="sk w3"></div>
+            <p class="tkt__meta mono"><span>{t.ui.exampleView}</span></p>
+            <div class="tkt__stamps">
+              {tk.stamps.map((st, i) => (
+                <span class={`tstamp mono ink-${INK[i]} ${i === tk.stamps.length - 1 ? 'big' : ''}`} style={`--sx:${SPOTS[i][0]}%;--sy:${SPOTS[i][1]}%;--r:${SPOTS[i][2]}deg`}>{st}</span>
+              ))}
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+    </div>
+
+    <ol class="tl reveal">
+      {sv.items.map((it, i) => (
+        <li class="tl__step" style={`--i:${i}`}>
+          <span class="tl__dot" aria-hidden="true"></span>
+          <p class="tl__phase mono"><span>0{i + 1}</span> {it.phase}</p>
+          <h3 class="tl__title">{it.title}</h3>
+          <p class="tl__text">{it.text}</p>
+          <ul class="tl__list">
+            {it.list.map((li) => <li><Icon name="check" size={18} />{li}</li>)}
+          </ul>
+        </li>
+      ))}
+    </ol>
+
+    <div class="services__after reveal">
+      {sv.closing && <p class="services__closing">{sv.closing}</p>}
+      <a class="btn btn--light services__cta" href="#contact">{sv.cta}<Icon name="arrow" /></a>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* Ticket carimbado (30/09) */
+  .tkt { position: relative; height: 392px; margin-bottom: clamp(28px, 4vw, 44px); }
+  .tkt__card { position: absolute; top: 0; left: 0; width: clamp(300px, 34%, 400px); opacity: 0; will-change: transform, opacity; }
+  .tkt__paper { background: var(--white); color: var(--text); border-radius: 10px; box-shadow: 0 24px 60px rgba(0, 0, 0, .4); overflow: hidden; }
+  .tkt__paper.is-hit { animation: tkthit .22s ease-out; }
+  @keyframes tkthit { 35% { transform: translateY(3px) scale(.994); } }
+  .tkt__head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 16px 18px; border-bottom: 1px solid #E6EEF6; }
+  .tkt__title { display: flex; align-items: center; gap: 10px; font-size: 14.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; }
+  .tkt__pin { width: 30px; height: 30px; border-radius: 6px; background: var(--navy); display: grid; place-items: center; flex: none; }
+  .tkt__chip { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; background: #F3F7FB; border: 1px solid #E1EAF3; border-radius: 99px; padding: 5px 9px; white-space: nowrap; }
+  .tkt__chip i { width: 8px; height: 8px; border-radius: 50%; background: var(--st-waiting); transition: background .3s; }
+  .tkt__chip b { font-weight: 700; }
+  .tkt__body { position: relative; padding: 18px; height: 296px; }
+  .sk { height: 8px; border-radius: 4px; background: #EDF2F7; margin-bottom: 10px; }
+  .sk.w1 { width: 62%; } .sk.w2 { width: 84%; } .sk.w3 { width: 46%; }
+  .tkt__meta { margin-top: 14px; }
+  .tkt__meta span { font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--text-2); border: 1px dashed #CBD8E6; border-radius: 4px; padding: 4px 7px; }
+  .tkt__stamps { position: absolute; inset: 0 12px; }
+  .tstamp { position: absolute; left: var(--sx); top: var(--sy); transform: translate(-50%, -50%) rotate(var(--r)) scale(1.9); opacity: 0;
+            font-size: 13px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; white-space: nowrap;
+            border: 2px solid currentColor; border-radius: 5px; padding: 5px 10px; background: rgba(255, 255, 255, .35); mix-blend-mode: multiply; }
+  .tstamp.ink-blue { color: #1D5BC8; } .tstamp.ink-green { color: #1E9E57; } .tstamp.ink-red { color: #D63A26; }
+  .tstamp.big { font-size: 26px; padding: 7px 16px; border-width: 3px; letter-spacing: .18em; }
+  .tstamp.is-on { animation: tktthump .38s cubic-bezier(.2, .9, .25, 1.25) forwards; }
+  .tstamp.is-static { opacity: .9; transform: translate(-50%, -50%) rotate(var(--r)); }
+  @keyframes tktthump { 0% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--r)) scale(1.9); } 60% { opacity: .95; } 100% { opacity: .9; transform: translate(-50%, -50%) rotate(var(--r)) scale(1); } }
+  /* 30/09 (computador, layout mais encaixado): título à esquerda e ticket à direita, como na seção "Built for underground
+     work"; o cartão fica parado e a fase acesa é a da linha do tempo logo abaixo. */
+  @media (min-width: 1024px) {
+    .svc-top { display: grid; grid-template-columns: 6fr 5fr; gap: clamp(40px, 5vw, 80px); align-items: center; margin-bottom: clamp(48px, 5vw, 72px); }
+    .svc-top .section-head { margin-bottom: 0; }
+    .tkt { height: auto; margin-bottom: 0; }
+    .tkt__card { position: relative; width: min(400px, 100%); margin-left: auto; }
+  }
+  /* Tablet e celular: o cartão fica no centro, sem andar */
+  @media (max-width: 1023px) {
+    .tkt__card { left: 50%; width: min(400px, 100%); margin-left: calc(min(400px, 100%) / -2); }
+  }
+  @media (max-width: 767px) {
+    .tkt { height: 360px; }
+    .tkt__body { height: 272px; }
+    .tstamp { font-size: 12px; }
+    .tstamp.big { font-size: 24px; }
+  }
+  @media (max-width: 400px) {
+    .tkt__title { font-size: 12.5px; letter-spacing: .08em; gap: 8px; }
+    .tkt__chip { font-size: 10px; padding: 4px 8px; }
+  }
+
+  /* Fase em que o ticket está agora (main.js, initTicket) */
+  .tl.is-in .tl__step.is-current .tl__dot { box-shadow: 0 0 0 8px rgba(68, 164, 238, .2), 0 0 24px rgba(68, 164, 238, .75); }
+  .tl__step .tl__phase { transition: color .4s; }
+  .tl__step.is-current .tl__phase { color: var(--white); }
+
+  /* Linha do tempo: traço fino azul (como a perfuração da intro) que se desenha da esquerda para a direita */
+  .tl { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(28px, 4vw, 56px); list-style: none; padding-top: 48px; }
+  .tl::before, .tl::after { content: ""; position: absolute; top: 9px; left: 9px; right: 0; height: 2px; }
+  .tl::before { background: var(--line-dark); }
+  .tl::after { background: linear-gradient(90deg, var(--primary) 0%, var(--bright) 70%, var(--sky) 100%); box-shadow: 0 0 12px rgba(68, 164, 238, .55); transform-origin: 0 50%; transform: scaleX(0); transition: transform 1.6s var(--ease-out) .2s; }
+  .tl.is-in::after { transform: scaleX(1); }
+  .tl__step { position: relative; display: grid; gap: 12px; align-content: start; }
+  .tl__dot { position: absolute; top: -48px; left: 0; width: 20px; height: 20px; border-radius: 50%; background: var(--navy); border: 2px solid var(--line-dark); transition: border-color .4s, box-shadow .4s, background .4s; transition-delay: calc(.3s + var(--i) * .55s); }
+  .tl__dot::after { content: ""; position: absolute; inset: 4px; border-radius: 50%; background: var(--sky); opacity: 0; transition: opacity .4s; transition-delay: inherit; }
+  .tl.is-in .tl__dot { border-color: var(--bright); box-shadow: 0 0 0 6px rgba(68, 164, 238, .12), 0 0 16px rgba(68, 164, 238, .5); }
+  .tl.is-in .tl__dot::after { opacity: 1; }
+  .tl__phase { font-size: 11px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; color: var(--sky); }
+  .tl__phase span { color: var(--on-dark-2); margin-right: 6px; }
+  .tl__title { font-size: clamp(20px, 1.9vw, 26px); font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; color: var(--white); }
+  .tl__text { color: var(--on-dark-2); font-size: 16px; line-height: 1.55; }
+  .tl__list { display: grid; gap: 8px; margin-top: 4px; color: var(--white); font-size: 15px; }
+  .tl__list li { display: flex; gap: 10px; align-items: flex-start; }
+  .tl__list :global(svg) { flex: none; width: 18px; height: 18px; margin-top: 2px; color: var(--sky); }
+
+  .services__after { display: grid; justify-items: start; margin-top: clamp(40px, 5vw, 64px); padding-top: 28px; border-top: 1px solid var(--line-dark); max-width: 820px; }
+  .services__closing { color: var(--on-dark-2); font-size: 16px; line-height: 1.5; }
+  .services__cta { margin-top: 24px; white-space: normal; text-align: left; }
+
+  /* Celular: a linha vira vertical, à esquerda das fases */
+  @media (max-width: 767px) {
+    .tl { grid-template-columns: 1fr; gap: 40px; padding-top: 0; padding-left: 40px; }
+    .tl::before, .tl::after { top: 10px; bottom: 0; left: 9px; right: auto; width: 2px; height: auto; }
+    .tl::after { background: linear-gradient(180deg, var(--primary) 0%, var(--bright) 70%, var(--sky) 100%); transform-origin: 50% 0; transform: scaleY(0); }
+    .tl.is-in::after { transform: scaleY(1); }
+    .tl__dot { top: 0; left: -40px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .tl::after { transform: none !important; transition: none; }
+    .tl__dot, .tl__dot::after { transition: none; }
+  }
+</style>

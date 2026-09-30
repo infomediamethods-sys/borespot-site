@@ -1,0 +1,183 @@
+---
+import Icon from './Icon.astro';
+import { proof, bookingHref, LANGS, LANG_LABELS, href, withBase } from '../data/site.js';
+const { lang, t } = Astro.props;
+const words = (s) => s.split(' ');
+const hasClients = typeof proof.clientCount === 'number';
+const target = hasClients ? proof.clientCount : proof.feet.value;
+const decimals = hasClients ? 0 : proof.feet.decimals;
+const suffix = hasClients ? '+' : proof.feet.suffix;
+const proofLine = hasClients ? t.intro.proofClientsLine : t.intro.proofFeetLine;
+const book = bookingHref(lang, true);
+---
+<section id="top" class="stage" data-stage aria-label="Bore Spot">
+  <div class="stage__pin" data-stage-pin>
+
+    <!-- HERO: estado final. Fica no HTML normal (SEO); a intro é uma camada por cima. -->
+    <div class="hero" data-hero>
+      <div class="container hero__grid">
+        <div class="hero__copy" data-hero-copy>
+          <p class="eyebrow">{t.hero.eyebrow}</p>
+          <h1 class="h1 hero__title">{t.hero.title}</h1>
+          <p class="lead hero__sub">{t.hero.sub}</p>
+          <div class="btn-row hero__ctas">
+            <!-- Regra de Armin (28/09): no máximo 1 botão por seção levando ao formulário (a navbar não conta); cada seção com um texto diferente. -->
+            <a class="btn btn--primary" href={book} data-book>{t.hero.cta}<Icon name="arrow" /></a>
+          </div>
+        </div>
+        <!-- Imagens do produto (substituem o painel em código em 25/09, a pedido de Armin). Cópias sem o fundo branco, feitas a partir
+             das originais em public/img/product/*-white.png. Desktop e tablet: cards em pé ao lado do mockup; celular: cards deitados embaixo. -->
+        <div class="hero__panel hero-product" data-hero-panel data-hero-product role="img" aria-label={t.hero.panelLabel}>
+          <img class="hero-product__mockup" src={withBase('/img/product/bore-spot-mockup-tablet-iphone-1200.webp')}
+            srcset={`${withBase('/img/product/bore-spot-mockup-tablet-iphone-800.webp')} 800w, ${withBase('/img/product/bore-spot-mockup-tablet-iphone-1200.webp')} 1200w`}
+            sizes="(min-width: 1024px) 40vw, (min-width: 768px) 70vw, 92vw" width="1200" height="837" alt="" fetchpriority="high" decoding="async" />
+          <img class="hero-product__cards hero-product__cards--v" src={withBase('/img/product/bore-spot-cards-vertical-480.webp')}
+            srcset={`${withBase('/img/product/bore-spot-cards-vertical-320.webp')} 320w, ${withBase('/img/product/bore-spot-cards-vertical-480.webp')} 480w`}
+            sizes="(min-width: 1024px) 12vw, 20vw" width="480" height="1218" alt="" decoding="async" />
+          <img class="hero-product__cards hero-product__cards--h" src={withBase('/img/product/bore-spot-cards-horizontal-900.webp')}
+            srcset={`${withBase('/img/product/bore-spot-cards-horizontal-900.webp')} 900w, ${withBase('/img/product/bore-spot-cards-horizontal-1400.webp')} 1400w`}
+            sizes="92vw" width="900" height="204" alt="" decoding="async" loading="lazy" />
+        </div>
+      </div>
+    </div>
+
+    <!-- INTRO: só existe visualmente com html.intro-on (primeira visita da sessão, sem "reduzir movimento"). -->
+    <div class="intro" data-intro aria-hidden="true">
+      <div class="intro__canvas" data-intro-canvas-wrap>
+        <canvas data-intro-canvas></canvas>
+        <div class="intro__vignette"></div>
+        <p class="intro__credit mono" data-intro-credit>© OpenStreetMap contributors</p>
+
+        {t.intro.scenes.map((s, i) => (
+          <div class="scene" data-scene={i}>
+            <p class="scene__promise">{words(s.promise).map((w) => <span class="w">{w}</span>)}</p>
+            <p class="scene__reality">{s.reality}</p>
+          </div>
+        ))}
+
+        <div class="scene scene--proof" data-scene="2" data-proof-target={target} data-proof-decimals={decimals} data-proof-locale={t.ui.numberLocale}>
+          <p class="scene__num"><span data-proof-value>0</span><span class="scene__suffix">{suffix}</span></p>
+          <p class="scene__line">{words(proofLine).map((w) => <span class="w">{w}</span>)}</p>
+          <p class="scene__small mono">{t.intro.proofSmall.join(' · ')}</p>
+        </div>
+      </div>
+
+      <div class="intro__brand" data-intro-brand>
+        <div class="intro__brand-inner">
+          <span class="lockup intro__lockup" data-brand-lockup>
+            <img class="lockup__pin" data-brand-pin src={withBase('/img/brand/bore-spot-pin-384.png')} alt="" width="286" height="384" />
+            <span class="lockup__word intro__word" data-brand-word>Bore Spot</span>
+          </span>
+          <p class="intro__tagline mono" data-brand-tagline>{t.intro.tagline}</p>
+        </div>
+      </div>
+
+      <!-- Seletor de idioma só durante a intro, no canto superior direito (pedido de Armin, 27/09). Aparece desde o primeiro quadro e some quando o menu do site desce, no fim da intro. -->
+      <nav class="intro__langs" data-intro-langs aria-label={t.ui.language}>
+        <svg class="intro__globe" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.6 2.6 3.6 5.6 3.6 9s-1 6.4-3.6 9M12 3C9.4 5.6 8.4 8.6 8.4 12s1 6.4 3.6 9" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+        {LANGS.map((l) => <a href={href(l, '/')} hreflang={l} lang={l} aria-current={l === lang ? 'true' : undefined}>{LANG_LABELS[l]}</a>)}
+      </nav>
+
+      <div class="intro__ui" data-intro-ui>
+        <ol class="intro__steps" data-intro-steps>
+          <li class="is-on"></li><li></li><li></li><li></li>
+        </ol>
+        <p class="intro__cue mono" data-intro-cue><span>{t.ui.scroll}</span><i></i></p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<style>
+  .stage { position: relative; background: var(--navy); color: var(--white); }
+  .stage__pin { position: relative; min-height: 100svh; overflow: hidden; display: flex; }
+  :global(html.intro-on) .stage__pin { height: 100svh; min-height: 620px; }
+
+  /* HERO */
+  .hero { position: relative; z-index: 1; flex: 1; display: flex; align-items: center; padding-block: calc(var(--nav-h) + 40px) 48px;
+    background: radial-gradient(80% 60% at 75% 40%, rgba(32, 101, 213, .18), transparent 70%), var(--navy); }
+  .hero__grid { display: grid; grid-template-columns: 0.95fr 1.05fr; gap: clamp(32px, 4vw, 64px); align-items: center; }
+  .hero__copy { display: grid; gap: 22px; }
+  .hero__title { max-width: 12em; }
+  .hero__sub { max-width: 30em; }
+  .hero__ctas { margin-top: 6px; }
+  .hero__ctas .btn { white-space: normal; text-align: left; line-height: 1.25; max-width: 100%; }
+  /* Imagens do produto: mockup à esquerda e cards em pé à direita; no celular, cards deitados embaixo do mockup */
+  /* Colunas 2,8 : 1 deixam os cards um pouco mais altos que o mockup */
+  .hero-product { display: grid; grid-template-columns: minmax(0, 2.8fr) minmax(0, 1fr); align-items: center; gap: clamp(8px, 1.2vw, 18px); min-height: 0; }
+  .hero-product img { display: block; width: 100%; height: auto; }
+  .hero-product .hero-product__cards--h { display: none; }
+
+  /* INTRO */
+  .intro { display: none; }
+  :global(html.intro-on) .intro { display: block; }
+  .intro__canvas { position: absolute; inset: 0; z-index: 2; background: var(--navy-deep); }
+  .intro__canvas canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .intro__vignette { position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(70% 60% at 22% 32%, rgba(3, 16, 43, .78), transparent 70%), linear-gradient(180deg, rgba(3, 16, 43, .35), transparent 30%, transparent 80%, rgba(3, 16, 43, .5)); }
+
+  .scene { position: absolute; left: max(var(--gutter), calc((100vw - var(--container)) / 2)); top: calc(var(--nav-h) + 9vh); width: min(820px, calc(100vw - 2 * var(--gutter))); display: grid; gap: 22px; }
+  .scene__promise, .scene__line { font-weight: 800; font-size: clamp(36px, 6.2vw, 84px); line-height: 1.02; letter-spacing: -0.025em; text-wrap: balance; }
+  .scene__line { font-size: clamp(26px, 3.6vw, 48px); font-weight: 700; max-width: 16em; }
+  .w { display: inline-block; margin-right: 0.24em; will-change: transform, opacity, filter; }
+  .scene__reality { font-size: clamp(17px, 1.7vw, 22px); line-height: 1.45; color: var(--on-dark-2); max-width: 32em; }
+  .scene__num { font-weight: 500; font-size: clamp(76px, 13vw, 176px); line-height: .9; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+  .scene__suffix { color: var(--sky); }
+  .scene__small { font-size: 13px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--sky); }
+
+  /* Crédito obrigatório dos dados do mapa (OpenStreetMap, licença ODbL). O JS acende junto com o mapa. */
+  .intro__credit { position: absolute; right: var(--gutter); bottom: calc(10px + env(safe-area-inset-bottom, 0px)); z-index: 1; margin: 0; font-size: 10px; font-weight: 500; letter-spacing: .04em; color: rgba(199, 218, 235, .7); opacity: 0; pointer-events: none; }
+
+  .intro__brand { position: absolute; inset: 0; z-index: 3; display: grid; place-items: center; pointer-events: none; }
+  .intro__brand-inner { display: grid; justify-items: center; gap: 28px; }
+  .intro__lockup { font-size: clamp(28px, 8.4vw, 92px); }
+  .intro__lockup .lockup__pin { --glow: 0; filter: drop-shadow(0 0 calc(var(--glow) * 22px) rgba(115, 212, 247, calc(var(--glow) * .9))) drop-shadow(0 0 calc(var(--glow) * 60px) rgba(68, 164, 238, calc(var(--glow) * .6))); }
+  .intro__word {
+    --base: #CFE2FF;
+    background: linear-gradient(100deg, var(--base) 0 42%, #FFFFFF 50%, var(--base) 58% 100%);
+    background-size: 300% 100%; background-position: 100% 0;
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent;
+  }
+  .intro__tagline { font-size: clamp(11px, 1.1vw, 14px); font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--sky); text-align: center; padding-inline: var(--gutter); }
+
+  .intro__ui { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+  .intro__langs { position: absolute; z-index: 5; top: calc(18px + env(safe-area-inset-top, 0px)); right: var(--gutter); display: flex; align-items: center; gap: 2px; padding: 3px 3px 3px 10px; border: 1px solid rgba(199, 218, 235, .22); border-radius: 6px; background: rgba(3, 16, 43, .6); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); pointer-events: auto; font-family: var(--mono); font-size: 12px; font-weight: 700; letter-spacing: .1em; }
+  .intro__globe { color: var(--on-dark-2); margin-right: 4px; flex: none; }
+  .intro__langs a { display: inline-flex; align-items: center; justify-content: center; min-width: 38px; min-height: 34px; border-radius: 4px; text-decoration: none; color: var(--on-dark-2); transition: color .2s, background-color .2s; }
+  .intro__langs a:hover { color: var(--white); }
+  .intro__langs a[aria-current] { color: var(--white); background: rgba(199, 218, 235, .14); }
+  .intro__steps { position: absolute; right: var(--gutter); top: 50%; transform: translateY(-50%); display: grid; gap: 12px; justify-items: end; }
+  .intro__steps li { width: 20px; height: 2px; background: rgba(255, 255, 255, .28); transition: width .35s var(--ease-out), background .35s; }
+  .intro__steps li.is-on { width: 36px; background: var(--sky); }
+  .intro__cue { position: absolute; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); display: grid; justify-items: center; gap: 10px; font-size: 11px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--on-dark-2); }
+  .intro__cue i { display: block; width: 1px; height: 40px; background: linear-gradient(var(--sky), transparent); position: relative; overflow: hidden; }
+  .intro__cue i::after { content: ""; position: absolute; left: 0; top: -40px; width: 1px; height: 40px; background: #fff; animation: cue 1.6s ease-in-out infinite; }
+  @keyframes cue { to { top: 40px; } }
+
+  /* Estado inicial do hero enquanto a intro roda (o GSAP revela no fim) */
+  :global(html.intro-on) .hero__copy > * { opacity: 0; }
+  /* As imagens do produto aparecem no fim da intro, no mesmo lugar do antigo painel */
+  :global(html.intro-on) .hero-product { opacity: 0; }
+
+  @media (max-width: 1023px) {
+    .hero { align-items: stretch; padding-block: calc(var(--nav-h) + 28px) 24px; }
+    .hero__grid { grid-template-columns: 1fr; grid-template-rows: auto 1fr; gap: 28px; }
+    .hero-product { align-self: center; max-height: 100%; }
+  }
+  @media (max-width: 767px) {
+    .hero__copy { gap: 16px; }
+    .hero__title { font-size: clamp(25px, 7.2vw, 34px); }
+    .hero__sub { font-size: 16px; }
+    .hero__ctas .btn { min-height: 46px; padding: 11px 14px; font-size: 15px; white-space: normal; text-align: left; line-height: 1.25; max-width: 100%; }
+    .hero-product { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) auto; align-content: center; gap: 10px; }
+    .hero-product img.hero-product__mockup { width: auto; max-width: 100%; max-height: 100%; min-height: 0; object-fit: contain; justify-self: center; }
+    .hero-product .hero-product__cards--v { display: none; }
+    .hero-product .hero-product__cards--h { display: block; width: 100%; }
+    .intro__steps { display: none; }
+    .scene { top: calc(var(--nav-h) + 4vh); gap: 16px; }
+    .scene__promise { font-size: clamp(32px, 9.4vw, 44px); }
+    .intro__vignette { background: linear-gradient(180deg, rgba(3, 16, 43, .85) 0%, rgba(3, 16, 43, .55) 45%, transparent 62%, rgba(3, 16, 43, .4)); }
+  }
+  @media (prefers-reduced-motion: reduce) { .intro__cue i::after { animation: none; } }
+</style>

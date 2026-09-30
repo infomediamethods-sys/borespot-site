@@ -1,0 +1,101 @@
+---
+import '../styles/global.css';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+import { site, LANGS, HTML_LANG, BASE, withBase } from '../data/site.js';
+// lang: idioma da página. path: endereço da página sem o idioma ('' = landing, '/referral'...). intro: só a landing tem a intro.
+const { lang, t, path = '', intro = false } = Astro.props;
+const title = Astro.props.title || t.meta.title;
+const description = Astro.props.description || t.meta.description;
+const isHome = path === '';
+const pageUrl = (l) => `${site.url}/${l}${path}`;
+const OG_LOCALE = { en: 'en_US', es: 'es_US', pt: 'pt_BR' };
+// Textos usados pelos scripts (menu e formulário)
+const uiStrings = { openMenu: t.ui.openMenu, closeMenu: t.ui.closeMenu, numberLocale: t.ui.numberLocale, form: t.contact.status };
+const noindex = import.meta.env.PUBLIC_NOINDEX === 'true';
+---
+<!doctype html>
+<html lang={HTML_LANG[lang]} data-base={BASE}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <script is:inline>
+      // Idioma (decisão de Armin, 27/09): o site abre em inglês e só muda quando a pessoa escolhe outro idioma.
+      // A escolha fica guardada (bs-lang) e vale em todas as páginas, inclusive ao voltar ou avançar no navegador.
+      (function () {
+        var B = document.documentElement.dataset.base || '';
+        var re = /^\/(en|es|pt)(?=\/|$)/;
+        function stripBase(p) { return B && p.indexOf(B + '/') === 0 ? p.slice(B.length) : p; }
+        function saved() { try { return localStorage.getItem('bs-lang'); } catch (e) { return null; } }
+        function follow() {
+          var s = saved(), p = stripBase(location.pathname), m = p.match(re);
+          if (s && m && s !== m[1] && /^(en|es|pt)$/.test(s)) location.replace(B + p.replace(re, '/' + s) + location.search + location.hash);
+        }
+        follow();
+        window.addEventListener('pageshow', function (e) { if (e.persisted) follow(); });
+        // Clique em qualquer seletor de idioma (menu, rodapé, intro): guarda a escolha e troca sem deixar o idioma antigo no histórico
+        document.addEventListener('click', function (e) {
+          var a = e.target.closest && e.target.closest('a[hreflang][lang]');
+          if (!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+          var l = a.getAttribute('hreflang');
+          if (!/^(en|es|pt)$/.test(l)) return;
+          try { localStorage.setItem('bs-lang', l); } catch (err) {}
+          e.preventDefault();
+          location.replace(a.href);
+        });
+      })();
+    </script>
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+    <meta name="theme-color" content="#061C46" />
+    <link rel="canonical" href={pageUrl(lang)} />
+    {LANGS.map((l) => <link rel="alternate" hreflang={HTML_LANG[l]} href={pageUrl(l)} />)}
+    <link rel="alternate" hreflang="x-default" href={pageUrl('en')} />
+    <link rel="icon" type="image/png" href={withBase('/favicon.png')} />
+    <link rel="apple-touch-icon" href={withBase('/img/brand/apple-touch-icon.png')} />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={pageUrl(lang)} />
+    <meta property="og:locale" content={OG_LOCALE[lang]} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@125,800&family=Geist:wght@400;500;700;800&family=Geist+Mono:wght@500;700&display=swap" />
+    {intro ? (
+      <script is:inline define:vars={{ introAlways: site.introAlways, mapUrl: withBase('/intro/miami-map.json') }}>
+        // Decide antes da primeira pintura se a intro roda. Decisão de Armin (27/09): roda em toda visita, para todo mundo,
+        // inclusive com "reduzir movimento" (nesse caso o texto da intro entra sem blur nem deslocamento; ver intro.js).
+        (function () {
+          var d = document.documentElement;
+          d.classList.add('js');
+          var seen = false;
+          try { seen = sessionStorage.getItem('bs-intro-seen') === '1'; } catch (e) {}
+          var forced = /[?&]intro=1/.test(location.search);
+          if (introAlways || !seen || forced) {
+            d.classList.add('intro-on');
+            // Mapa real da intro: começa a baixar já (cityMap.js reaproveita este download)
+            if (window.fetch && !window.__bsMap) { window.__bsMap = fetch(mapUrl).then(function (r) { if (!r.ok) throw new Error('map ' + r.status); return r.json(); }); window.__bsMap.catch(function () {}); }
+            // Sempre começa do topo, mesmo ao recarregar a página no meio da intro
+            if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+            window.scrollTo(0, 0);
+          }
+        })();
+      </script>
+    ) : (
+      <script is:inline>document.documentElement.classList.add('js');</script>
+    )}
+    <script type="application/json" id="i18n-ui" set:html={JSON.stringify(uiStrings)} />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">{t.ui.skipToContent}</a>
+    <Nav lang={lang} t={t} path={path} />
+    <main id="main">
+      <slot />
+    </main>
+    <Footer lang={lang} t={t} path={path} />
+    <script>
+      import '../scripts/main.js';
+    </script>
+  </body>
+</html>

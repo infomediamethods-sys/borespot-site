@@ -1,0 +1,89 @@
+---
+import Icon from './Icon.astro';
+import { LANGS, LANG_LABELS, linkTo, bookingHref, href, withBase } from '../data/site.js';
+const { lang, t, path = '' } = Astro.props;
+const isHome = path === '';
+const book = bookingHref(lang, isHome);
+---
+<header class="nav" data-nav>
+  <div class="container nav__inner">
+    <a class="lockup nav__lockup" href={isHome ? '#top' : href(lang, '/')} aria-label={isHome ? t.ui.backToTop : t.ui.home} data-nav-lockup>
+      <img class="lockup__pin" src={withBase('/img/brand/bore-spot-pin-96.png')} alt="" width="71" height="96" />
+      <span class="lockup__word">Bore Spot</span>
+    </a>
+    <nav class="nav__links" aria-label={t.ui.mainNav}>
+      {t.nav.map((l) => <a href={linkTo(lang, l, isHome)} aria-current={l.page && l.page === path ? 'page' : undefined}>{l.label}</a>)}
+    </nav>
+    <div class="nav__actions">
+      <nav class="langs nav__langs" aria-label={t.ui.language}>
+        {LANGS.map((l) => <a href={href(l, path)} hreflang={l} lang={l} aria-current={l === lang ? 'true' : undefined}>{LANG_LABELS[l]}</a>)}
+      </nav>
+      <a class="btn btn--primary nav__cta" href={book} data-book>{t.ui.book}</a>
+      <button class="nav__toggle" type="button" aria-expanded="false" aria-controls="nav-menu" aria-label={t.ui.openMenu} data-nav-toggle>
+        <Icon name="menu" class="nav__icon-open" />
+        <Icon name="close" class="nav__icon-close" />
+      </button>
+    </div>
+  </div>
+  <div class="nav__menu" id="nav-menu" data-nav-menu hidden>
+    <div class="container">
+      {t.nav.map((l) => <a href={linkTo(lang, l, isHome)} data-nav-close>{l.label}</a>)}
+      <nav class="langs nav__menu-langs" aria-label={t.ui.language}>
+        {LANGS.map((l) => <a href={href(l, path)} hreflang={l} lang={l} aria-current={l === lang ? 'true' : undefined}>{LANG_LABELS[l]}</a>)}
+      </nav>
+      <a class="btn btn--primary" href={book} data-nav-close data-book>{t.ui.book}</a>
+    </div>
+  </div>
+</header>
+
+<style>
+  .nav {
+    position: fixed; inset: 0 0 auto 0; z-index: 50;
+    padding-top: env(safe-area-inset-top, 0px);
+    /* 29/09: sem backdrop-filter (desfoque do fundo): ele obrigava a redesenhar tudo o que passa por baixo a cada quadro
+       de rolagem e causava micro travadas. Fundo quase opaco no lugar, visualmente igual. */
+    background: rgba(6, 28, 70, 0.96);
+    border-bottom: 1px solid var(--line-dark);
+    color: var(--white);
+  }
+  :global(html.intro-on) .nav { opacity: 0; transform: translateY(-100%); }
+  .nav__inner { height: var(--nav-h); display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+  .nav__lockup { font-size: 17px; }
+  .nav__links { display: flex; gap: 32px; font-size: 15px; font-weight: 500; }
+  .nav__links a { text-decoration: none; color: var(--on-dark-2); transition: color .2s; }
+  .nav__links a:hover { color: var(--white); }
+  .nav__actions { display: flex; align-items: center; gap: 8px; }
+  .nav__cta { min-height: 42px; padding: 10px 16px; font-size: 15px; }
+  .nav__toggle {
+    display: none; width: 44px; height: 44px; align-items: center; justify-content: center;
+    background: transparent; border: 1px solid var(--line-dark); border-radius: var(--r); cursor: pointer; color: var(--white);
+  }
+  .nav__toggle :global(.nav__icon-close) { display: none; }
+  .nav.is-open :global(.nav__icon-open) { display: none; }
+  .nav.is-open :global(.nav__icon-close) { display: block; }
+  .nav__menu { border-top: 1px solid var(--line-dark); }
+  .nav__menu .container { display: grid; gap: 4px; padding-block: 12px 20px; }
+  .nav__menu a:not(.btn) { padding: 12px 0; text-decoration: none; font-size: 18px; font-weight: 500; border-bottom: 1px solid var(--line-dark); }
+  .nav__menu .btn { margin-top: 12px; }
+  .langs { display: flex; align-items: center; gap: 2px; font-family: var(--mono); font-size: 12px; font-weight: 700; letter-spacing: .1em; }
+  .langs a { display: inline-flex; align-items: center; justify-content: center; min-width: 34px; min-height: 34px; padding: 0 6px; border-radius: var(--r); text-decoration: none; color: var(--on-dark-2); transition: color .2s, background-color .2s; }
+  .langs a:hover { color: var(--white); }
+  .langs a[aria-current] { color: var(--white); background: rgba(199, 218, 235, .12); }
+  .nav__langs { margin-right: 6px; }
+  .nav__menu .nav__menu-langs { gap: 8px; padding-top: 16px; }
+  .nav__menu .nav__menu-langs a { min-width: 48px; min-height: 44px; border: 1px solid var(--line-dark); font-size: 14px; }
+
+  @media (max-width: 1080px) { .nav__links { gap: 22px; } }
+  @media (max-width: 900px) {
+    .nav__links { display: none; }
+    .nav__langs { display: none; }
+    .nav__toggle { display: inline-flex; }
+  }
+  @media (max-width: 520px) {
+    .nav__cta { padding: 6px 12px; font-size: 13px; line-height: 1.15; white-space: normal; text-align: center; max-width: 168px; }
+    .nav__lockup { font-size: 15px; }
+  }
+  @media (max-width: 380px) {
+    .nav__cta { display: none; }
+  }
+</style>

@@ -1,0 +1,88 @@
+---
+import Icon from './Icon.astro';
+import { PROJECT_TYPES } from '../data/site.js';
+const { t } = Astro.props;
+const w = t.why;
+---
+<section id="why" class="section section--dark" aria-labelledby="why-title">
+  <div class="container why__grid">
+    <!-- 30/09 (Armin): no celular e no tablet o título vem antes da central, e a lista depois. -->
+    <div class="section-head reveal why__head">
+      <p class="eyebrow">{w.eyebrow}</p>
+      <h2 class="h2" id="why-title">{w.title}</h2>
+      <p class="lead">{w.lead}</p>
+    </div>
+    <div class="why__copy">
+      <ul class="why__list">
+        {w.items.map((it) => (
+          <li class="reveal">
+            <span class="why__icon"><Icon name={it.icon} /></span>
+            <div>
+              <h3 class="why__title">{it.title}</h3>
+              <p>{it.text}</p>
+            </div>
+          </li>
+        ))}
+      </ul>
+      {w.closing && (
+        <p class="why__closing reveal"><span>{w.closing[0]}</span> <span>{w.closing[1]}</span></p>
+      )}
+      <div class="why__chips reveal">
+        <p class="mono why__chips-label">{w.chipsLabel}</p>
+        <ul class="why__chip-row">
+          {PROJECT_TYPES.filter((c) => c !== 'Other').map((c) => (
+            <li class="chip">{t.contact.projectTypes[c]}</li>
+          ))}
+        </ul>
+      </div>
+      {w.cta && <a class="btn btn--primary why__cta reveal" href="#contact">{w.cta}<Icon name="arrow" /></a>}
+    </div>
+    <!-- 30/09 (Armin): no lugar da foto, a central: a equipe da Bore Spot no meio, entre a equipe do cliente e quem ela
+         aciona por ele (central 811, empresas, localizadores). Desenhada e animada em main.js (initWhyHub), em loop. -->
+    <div class="whyhub reveal" data-whyhub data-copy={JSON.stringify(w.hub)} aria-hidden="true"></div>
+  </div>
+</section>
+
+<style>
+  /* 30/09 (Armin): a foto volta. Texto à esquerda, foto à direita; lista em 1 coluna, como era antes de 29/09. */
+  .why__grid { display: grid; grid-template-columns: 7fr 5fr; grid-template-areas: "head hub" "copy hub"; column-gap: clamp(32px, 6vw, 96px); align-items: center; }
+  .why__head { grid-area: head; margin-bottom: 40px; }
+  .why__copy { grid-area: copy; }
+  .whyhub { grid-area: hub; }
+  .why__list { display: grid; }
+  .why__list li { display: grid; grid-template-columns: 44px 1fr; gap: 18px; padding: 20px 0; border-top: 1px solid var(--line-dark); color: var(--on-dark-2); }
+  .why__list li:last-child { border-bottom: 1px solid var(--line-dark); }
+  .whyhub { position: relative; width: 100%; max-width: 470px; justify-self: end; border-radius: var(--r-lg); overflow: hidden; border: 1px solid var(--line-dark);
+            background: radial-gradient(90% 70% at 50% 45%, #0E2E68 0%, #061C46 60%, #03102B 100%); }
+  .whyhub :global(svg) { display: block; width: 100%; height: auto; }
+  .whyhub :global(.wire) { transition: stroke-opacity .3s; }
+  .whyhub :global(.wire.is-hot) { stroke-opacity: .9; }
+  .whyhub :global(.node-ring) { transition: stroke .3s, stroke-width .3s; }
+  .whyhub :global(.node.is-hot .node-ring) { stroke: var(--sky); stroke-width: 2.5; }
+  .whyhub :global(.node-halo) { opacity: 0; transition: opacity .35s; }
+  .whyhub :global(.node.is-hot .node-halo) { opacity: 1; }
+  .whyhub :global(.core-halo) { opacity: .35; transition: opacity .3s; }
+  .whyhub :global(.core.is-hot .core-halo) { opacity: 1; }
+  .whyhub :global(.hubchip) { opacity: 0; transition: opacity .3s ease; }
+  .whyhub :global(.hubchip.is-on) { opacity: 1; }
+  .whyhub :global(.spin) { transform-box: fill-box; transform-origin: center; animation: hubspin 18s linear infinite; }
+  .whyhub.is-off :global(.spin) { animation-play-state: paused; }
+  @keyframes hubspin { to { transform: rotate(360deg); } }
+  .why__icon { width: 44px; height: 44px; border-radius: var(--r); border: 1px solid var(--line-dark); display: grid; place-items: center; color: var(--sky); }
+  .why__title { font-size: 19px; font-weight: 700; color: var(--white); margin-bottom: 4px; letter-spacing: -0.01em; }
+  .why__closing { margin-top: 32px; font-weight: 700; font-size: clamp(22px, 2.4vw, 30px); letter-spacing: -0.02em; line-height: 1.2; color: var(--white); }
+  .why__closing span:last-child { color: var(--sky); }
+  .why__chips { margin-top: 36px; display: grid; gap: 14px; }
+  .why__chips-label { font-size: 12px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; color: var(--sky); }
+  .why__chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  /* Chips são só rótulos desde 28/09 (regra de 1 botão por seção); não levam ao formulário. */
+  .chip { display: inline-flex; align-items: center; min-height: 36px; padding: 6px 12px; border-radius: var(--r); border: 1px solid var(--line-dark); background: rgba(255, 255, 255, .04); color: var(--white); font-family: var(--mono); font-size: 13px; font-weight: 500; letter-spacing: .04em; }
+  .why__cta { margin-top: 36px; white-space: normal; text-align: left; }
+  @media (max-width: 1023px) {
+    .why__grid { grid-template-columns: 1fr; grid-template-areas: "head" "hub" "copy"; }
+    .whyhub { justify-self: center; margin-bottom: 40px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .whyhub :global(.spin) { animation: none; }
+  }
+</style>

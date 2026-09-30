@@ -1,0 +1,42 @@
+---
+import Icon from './Icon.astro';
+const { t } = Astro.props;
+const pp = t.people;
+---
+<section id="people" class="section section--ice" aria-labelledby="people-title">
+  <div class="container">
+    <div class="section-head reveal">
+      <p class="eyebrow">{pp.eyebrow}</p>
+      <h2 class="h2" id="people-title">{pp.title}</h2>
+    </div>
+    <ul class="people__grid">
+      {pp.items.map((it) => (
+        <li class="people__card reveal">
+          <span class="people__icon"><Icon name={it.icon} size={26} /></span>
+          <h3 class="h3">{it.title}</h3>
+          <p>{it.text}</p>
+          {it.langs && (
+            <ul class="people__langs mono" aria-label={pp.langsLabel}>
+              {it.langs.map((l) => <li>{l}</li>)}
+            </ul>
+          )}
+        </li>
+      ))}
+    </ul>
+    <p class="people__closing reveal"><span>{pp.closing[0]}</span> <span>{pp.closing[1]}</span></p>
+  </div>
+</section>
+
+<style>
+  .people__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .people__card { background: var(--white); border: 1px solid var(--border); border-radius: var(--r); padding: 28px; display: grid; gap: 12px; align-content: start; color: var(--text-2); transition: border-color .25s, box-shadow .25s; }
+  .people__card:hover { border-color: var(--primary); box-shadow: 0 8px 30px rgba(15, 23, 41, .08); }
+  .people__card .h3 { color: var(--text); }
+  .people__icon { width: 52px; height: 52px; border-radius: var(--r); background: var(--ice); color: var(--primary); display: grid; place-items: center; margin-bottom: 6px; }
+  .people__langs { display: flex; gap: 8px; margin-top: 4px; }
+  .people__langs li { font-size: 13px; font-weight: 700; letter-spacing: .1em; color: var(--primary); border: 1px solid var(--border); border-radius: var(--r); padding: 4px 10px; }
+  .people__closing { margin-top: clamp(36px, 5vw, 56px); font-weight: 700; font-size: clamp(22px, 2.4vw, 30px); letter-spacing: -0.02em; line-height: 1.2; }
+  .people__closing span:last-child { color: var(--primary); }
+  @media (max-width: 900px) { .people__grid { grid-template-columns: 1fr; } }
+  @media (min-width: 768px) and (max-width: 900px) { .people__grid { grid-template-columns: repeat(3, 1fr); } .people__card { padding: 22px; } }
+</style>

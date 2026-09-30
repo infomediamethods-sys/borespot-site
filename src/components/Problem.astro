@@ -1,0 +1,57 @@
+---
+// Problema (28/09): grade de 4 painéis sempre visíveis, no lugar do accordion com troca de imagem (plano-secoes-abertas.md).
+// 29/09 (Armin): sem fotos; um ícone por painel, ligado ao contexto do item.
+import Icon from './Icon.astro';
+const { t } = Astro.props;
+const p = t.problem;
+const icons = ['idle', 'expired', 'phone', 'chase'];
+---
+<section id="problem" class="section section--soft" aria-labelledby="problem-title">
+  <div class="container">
+    <div class="section-head reveal">
+      <p class="eyebrow">{p.eyebrow}</p>
+      <h2 class="h2" id="problem-title">{p.title}</h2>
+      {p.lead.map((l) => <p class="lead">{l}</p>)}
+    </div>
+
+    <ol class="pgrid">
+      {p.items.map((it, i) => (
+        <li class="pcard reveal">
+          <div class="pcard__top">
+            <span class="pcard__icon"><Icon name={icons[i]} size={26} /></span>
+            <span class="pcard__num mono">0{i + 1}</span>
+          </div>
+          <h3 class="pcard__title">{it.title}</h3>
+          <p class="pcard__text">{it.text}</p>
+        </li>
+      ))}
+    </ol>
+
+    <p class="problem__closing reveal">
+      {p.closing.map((l) => <span>{l}</span>)}
+    </p>
+  </div>
+</section>
+
+<style>
+  .pgrid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(20px, 3vw, 32px); list-style: none; }
+  .pcard { display: grid; gap: 12px; align-content: start; background: var(--white); border: 1px solid var(--border); border-radius: var(--r-lg); padding: clamp(24px, 3vw, 36px); }
+  .pcard__top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .pcard__icon { width: 52px; height: 52px; border-radius: var(--r); background: var(--ice); color: var(--primary); display: grid; place-items: center; }
+  .pcard__num { font-size: 12px; font-weight: 700; letter-spacing: .15em; color: var(--text-2); }
+  .pcard__title { font-size: clamp(20px, 1.8vw, 24px); font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; color: var(--text); }
+  .pcard__text { color: var(--text-2); font-size: 17px; line-height: 1.5; }
+  .problem__closing { margin-top: clamp(40px, 6vw, 72px); display: grid; gap: 4px; font-weight: 700; font-size: clamp(22px, 2.4vw, 30px); letter-spacing: -0.02em; line-height: 1.2; }
+  .problem__closing span:last-child { color: var(--primary); }
+  /* 30/09: no computador, os 4 cartões numa linha só (a seção fica bem mais baixa) */
+  @media (min-width: 1200px) {
+    .pgrid { grid-template-columns: repeat(4, 1fr); gap: 20px; }
+    .pcard { padding: 26px 24px; }
+    .pcard__title { font-size: 20px; }
+    .pcard__text { font-size: 16px; }
+  }
+  @media (max-width: 767px) {
+    .pgrid { grid-template-columns: 1fr; gap: 16px; }
+    .pcard__text { font-size: 16px; }
+  }
+</style>

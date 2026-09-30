@@ -1,0 +1,72 @@
+---
+// Por cargo (29/09, Armin escolheu a opção A de plano-secao-por-cargo.md): sem fotos. Uma linha larga por cargo,
+// separada por um fio que se desenha em azul quando a linha entra na tela (o traço da linha do tempo de Serviços).
+// Computador: título fixo à esquerda enquanto as linhas rolam à direita. Tablet e celular: título em cima, linhas empilhadas.
+// As fotos foto-cargo-* e images.roles em site.js ficaram sem uso (continuam na pasta).
+import Icon from './Icon.astro';
+const { t } = Astro.props;
+const r = t.roles;
+---
+<section id="roles" class="section section--white" aria-labelledby="roles-title">
+  <div class="container roles">
+    <div class="roles__head">
+      <div class="section-head reveal">
+        <p class="eyebrow">{r.eyebrow}</p>
+        <h2 class="h2" id="roles-title">{r.title}</h2>
+      </div>
+    </div>
+
+    <ol class="rrows">
+      {r.items.map((it, i) => (
+        <li class="rrow reveal">
+          <p class="rrow__tab mono"><span>0{i + 1}</span>{it.tab}</p>
+          <h3 class="rrow__title">{it.title}</h3>
+          <p class="rrow__text">{it.text}</p>
+          <ul class="rrow__list">
+            {it.list.map((li) => <li><Icon name="check" size={18} />{li}</li>)}
+          </ul>
+        </li>
+      ))}
+    </ol>
+  </div>
+</section>
+
+<style>
+  .roles { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(40px, 6vw, 96px); align-items: start; }
+  .roles__head { position: sticky; top: calc(var(--nav-h, 72px) + 48px); }
+  .roles__head .section-head { margin-bottom: 0; }
+
+  .rrows { list-style: none; display: grid; }
+  .rrow { position: relative; display: grid; gap: 12px; padding-block: 32px 40px; border-top: 1px solid var(--border); }
+  .rrow:last-child { padding-bottom: 0; }
+  /* Fio azul que se desenha da esquerda para a direita quando a linha entra na tela */
+  .rrow::before {
+    content: ""; position: absolute; top: -1px; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--primary) 0%, var(--bright) 70%, var(--sky) 100%);
+    transform: scaleX(0); transform-origin: 0 50%; transition: transform 1.2s var(--ease-out) .15s;
+  }
+  .rrow.is-in::before { transform: scaleX(1); }
+  .rrow__tab { font-size: 12px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; color: var(--primary); }
+  .rrow__tab span { color: var(--text-2); margin-right: 10px; }
+  .rrow__title { font-size: clamp(24px, 2.4vw, 32px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; color: var(--text); }
+  .rrow__text { color: var(--text-2); font-size: 17px; line-height: 1.55; max-width: 62ch; }
+  .rrow__list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 24px; margin-top: 8px; color: var(--text); font-weight: 500; font-size: 15px; line-height: 1.4; }
+  .rrow__list li { display: flex; gap: 8px; align-items: flex-start; }
+  .rrow__list :global(svg) { flex: none; color: var(--primary); margin-top: 1px; }
+
+  /* Tablet: título em cima, sem fixação */
+  @media (max-width: 1023px) {
+    .roles { grid-template-columns: 1fr; gap: 0; }
+    .roles__head { position: static; }
+    .roles__head .section-head { margin-bottom: clamp(28px, 5vw, 48px); }
+  }
+  /* Celular: marcadores um embaixo do outro */
+  @media (max-width: 767px) {
+    .rrow { padding-block: 26px 30px; gap: 10px; }
+    .rrow__text { font-size: 16px; }
+    .rrow__list { grid-template-columns: 1fr; gap: 10px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .rrow::before { transform: none; transition: none; }
+  }
+</style>

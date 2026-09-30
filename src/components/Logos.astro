@@ -1,0 +1,54 @@
+---
+import { logos, logoNames, withBase } from '../data/site.js';
+const { t } = Astro.props;
+// Tamanho real de cada arquivo: com largura e altura no HTML, o carrossel não muda de tamanho enquanto as imagens carregam (era isso que dava os trancos)
+const DIM = {"brightspeed": [520, 76], "duke-energy": [350, 112], "charter": [355, 112], "comcast": [317, 112], "cox": [338, 112], "zayo": [347, 112], "fiber-technologies-solutions": [191, 112], "google-fiber": [78, 112], "tillman-fiber": [319, 112], "city-of-palm-coast": [194, 112], "verizon": [505, 112], "metronet": [520, 67], "omni-fiber": [343, 112], "pike-electric": [292, 112], "att": [272, 112], "gigapower": [520, 57], "fpl": [122, 112], "frontier": [363, 112], "lumen": [520, 72], "altafiber": [435, 112], "mears": [257, 112], "mastec": [520, 94], "spectrum": [520, 109], "live-oak-fiber": [520, 103]};
+---
+<section class="logos section--white" aria-labelledby="logos-title">
+  <div class="container">
+    <p class="eyebrow logos__title" id="logos-title">{t.logosTitle}</p>
+  </div>
+  <!-- Carrossel contínuo: roda sozinho, sem parar com o mouse (pedido de Armin, 27/09). As duas cópias andam juntas num trilho só. -->
+  <div class="logos__viewport">
+    <div class="logos__rail">
+      <ul class="logos__track">
+        {logos.map((l) => (
+          <li><img src={withBase(`/img/logos/${l}.webp`)} alt={logoNames[l]} width={DIM[l][0]} height={DIM[l][1]} decoding="async" class={`logo logo--${l}`} /></li>
+        ))}
+      </ul>
+      <ul class="logos__track" aria-hidden="true">
+        {logos.map((l) => (
+          <li><img src={withBase(`/img/logos/${l}.webp`)} alt="" width={DIM[l][0]} height={DIM[l][1]} decoding="async" class={`logo logo--${l}`} /></li>
+        ))}
+      </ul>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* Faixa de logos mais discreta (27/09): logos menores, menos espaço em volta */
+  .logos { --lh: 26px; padding-block: 40px 44px; border-bottom: 1px solid var(--soft); }
+  .logos__title { display: block; color: var(--text-2); margin-bottom: 22px; text-align: center; }
+  /* 29/09: o esfumado das bordas era um mask-image sobre a faixa que anda sem parar (a placa refazia a máscara a cada
+     quadro). Agora são duas faixas brancas em degradê por cima: mesmo visual, bem mais leve. A faixa para fora da tela. */
+  .logos__viewport { position: relative; overflow: hidden; }
+  .logos__viewport::before, .logos__viewport::after { content: ""; position: absolute; top: 0; bottom: 0; width: 8%; z-index: 1; pointer-events: none; }
+  .logos__viewport::before { left: 0; background: linear-gradient(90deg, var(--white), rgb(255 255 255 / 0)); }
+  .logos__viewport::after { right: 0; background: linear-gradient(270deg, var(--white), rgb(255 255 255 / 0)); }
+  .logos__viewport.is-off .logos__rail { animation-play-state: paused; }
+  .logos__rail { display: flex; width: max-content; animation: marquee 55s linear infinite; will-change: transform; backface-visibility: hidden; }
+  .logos__track { display: flex; align-items: center; gap: clamp(32px, 4vw, 56px); padding-right: clamp(32px, 4vw, 56px); flex-shrink: 0; margin: 0; }
+  .logo { display: block; height: var(--lh); width: auto; max-width: calc(var(--lh) * 4.4); object-fit: contain; }
+  /* Ajuste óptico: logos quadrados ou altos precisam de mais altura para ter o mesmo peso visual */
+  .logo--google-fiber, .logo--fpl { height: calc(var(--lh) * 1.35); }
+  .logo--city-of-palm-coast, .logo--fiber-technologies-solutions, .logo--tillman-fiber, .logo--mears { height: calc(var(--lh) * 1.24); }
+  .logo--gigapower, .logo--metronet, .logo--brightspeed { height: calc(var(--lh) * 0.7); }
+  @keyframes marquee { to { transform: translate3d(-50%, 0, 0); } }
+  @media (max-width: 767px) { .logos { --lh: 21px; padding-block: 32px 36px; } .logos__title { margin-bottom: 18px; } }
+  @media (prefers-reduced-motion: reduce) {
+    .logos__viewport::before, .logos__viewport::after { display: none; }
+    .logos__rail { animation: none; width: auto; justify-content: center; }
+    .logos__track { flex-wrap: wrap; justify-content: center; row-gap: 22px; flex-shrink: 1; padding-inline: var(--gutter); }
+    .logos__track[aria-hidden] { display: none; }
+  }
+</style>
