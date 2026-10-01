@@ -124,6 +124,9 @@ const book = bookingHref(lang, true);
   /* INTRO */
   .intro { display: none; }
   :global(html.intro-on) .intro { display: block; }
+  /* Até o JS aplicar os estados iniciais, os textos da intro ficam escondidos (sem a pilha de textos ao carregar) */
+  :global(html.intro-on:not(.intro-ready)) .scene, :global(html.intro-on:not(.intro-ready)) .intro__brand,
+  :global(html.intro-on:not(.intro-ready)) .intro__ui, :global(html.intro-on:not(.intro-ready)) .intro__langs { visibility: hidden; }
   .intro__canvas { position: absolute; inset: 0; z-index: 2; background: var(--navy-deep); }
   .intro__canvas canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
   .intro__vignette { position: absolute; inset: 0; pointer-events: none;

@@ -85,8 +85,10 @@ function build(stage, lenis) {
   // Pausas de leitura (01/10, pedido de Armin): depois que cada cena termina de animar, tudo fica parado na tela por mais
   // um trecho de rolagem (umas duas roladas) antes de sair. [ponto na linha do tempo antiga, tamanho da pausa].
   // O desenho do canvas e os limites por progresso continuam escritos na linha do tempo antiga (0 a 112); toOld converte.
-  const HOLDS = [[37.5, 12], [59.5, 12], [88, 4]];
-  const TOT = 112 + HOLDS.reduce((a, h) => a + h[1], 0); // fim da linha do tempo (100 até 30/09; 112 com a marca mais lenta; 140 com as pausas)
+  // 01/10 (v2): as pausas longas não seguravam um deslize forte no celular. Agora quem segura são as paradas (GATES, mais
+  // abaixo): a rolagem para no fim de cada cena e só segue no 2º gesto. As pausas ficaram curtas, só uma folga.
+  const HOLDS = [[37.5, 2], [59.5, 2]];
+  const TOT = 105 + HOLDS.reduce((a, h) => a + h[1], 0); // fim da linha do tempo (100 até 30/09; 105 + pausas desde 01/10)
   const toNew = (o) => HOLDS.reduce((n, [at, len]) => (o >= at ? n + len : n), o);
   const toOld = (n) => {
     let shift = 0;
@@ -706,6 +708,9 @@ function build(stage, lenis) {
   gsap.from(reality(0), { y: 16, autoAlpha: 0, duration: 0.8, delay: 0.75, ease: 'power3.out' });
   gsap.from(ui, { autoAlpha: 0, duration: 0.6, delay: 1 });
   if (introLangs) gsap.from(introLangs, { autoAlpha: 0, duration: 0.5, delay: 0.2 });
+  // Estados iniciais aplicados: libera o que o CSS escondia na primeira pintura (01/10: ao trocar de idioma,
+  // os textos de todas as cenas apareciam empilhados por um instante antes do JS esconder)
+  document.documentElement.classList.add('intro-ready');
 
   // Medidas para os cortes casados (offsets ignoram transformações)
   const M = { lock: { x: 0, y: 0, s: 1 } };
@@ -742,15 +747,20 @@ function build(stage, lenis) {
 
   // Aviso de rolagem (01/10): aparece no começo; some ao rolar; volta como "Keep scrolling" se a pessoa parar 4 s
   // no meio da intro. Tocar nele leva até a próxima parte (pontos em unidades da linha do tempo nova).
-  const CUE_STOPS = HOLDS.map(([at, len]) => toNew(at) - len + Math.min(4, len / 3)); // um pouco depois do começo de cada pausa
+  // Paradas (unidades da linha nova): fim da cena 2 (pins prontos), fim da cena 3 (número e estados) e marca com o brilho.
+  const GATES = [toNew(37.5) - 1, toNew(59.5) - 1, toNew(88)];
+  const GATE_GESTURES = 2; // gestos para seguir depois de parar: o 1º não mexe, o 2º desce
+  const CUE_STOPS = GATES;
   const CUE_END = 0.96; // linha antiga: depois disso a marca já está indo para o menu
   let idleT = 0;
+  const gate = { at: -1, count: 0, restId: -1, relId: -1, relGate: -1 }; // parada atual, gestos contados, gesto que chegou, gesto que liberou
   function cueUpdate(u) {
     clearTimeout(idleT);
     if (u < 0.03) { cue.classList.remove('is-hidden', 'is-keep'); return; }
     cue.classList.add('is-hidden');
     if (u < CUE_END) idleT = setTimeout(() => { cue.classList.add('is-keep'); cue.classList.remove('is-hidden'); }, 4000);
   }
+  const showKeep = () => { clearTimeout(idleT); cue.classList.add('is-keep'); cue.classList.remove('is-hidden'); };
   cue.addEventListener('click', () => {
     const st = tl.scrollTrigger;
     if (!st) return;
@@ -758,6 +768,7 @@ function build(stage, lenis) {
     const next = CUE_STOPS.find((x) => x > n + 0.5);
     const y = next === undefined ? Math.ceil(st.end) + 1 : st.start + (next / TOT) * (st.end - st.start);
     const dur = Math.min(4, Math.max(1.6, Math.abs(y - window.scrollY) / 2000));
+    gate.at = next === undefined ? -1 : CUE_STOPS.indexOf(next); gate.count = 0; gate.restId = -1; gate.relId = -1;
     if (lenis) lenis.scrollTo(y, { duration: dur, easing: (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2) });
     else window.scrollTo({ top: y, behavior: 'smooth' });
   });
@@ -812,17 +823,17 @@ function build(stage, lenis) {
     .to(brandPin, { '--glow': 0.6, duration: 6 }, toNew(82))
     .to(tagline, { autoAlpha: 1, y: 0, duration: 3.5, ease: 'power3.out' }, toNew(83))
     // Saída: a marca vai para a navbar e as imagens do produto aparecem
-    .to(ui, { autoAlpha: 0, duration: 3 }, toNew(98))
-    .to(tagline, { autoAlpha: 0, duration: 2 }, toNew(98))
-    .to(canvasWrap, { autoAlpha: 0, duration: 5 }, toNew(98))
-    .to(product, { autoAlpha: 1, y: 0, duration: 5, ease: 'power3.out' }, toNew(103))
-    .to(brandPin, { '--glow': 0, duration: 4 }, toNew(100))
-    .to(brandLockup, { x: () => M.lock.x, y: () => M.lock.y, scale: () => M.lock.s, duration: 7, ease: 'power2.inOut' }, toNew(100))
-    .to(nav, { yPercent: 0, autoAlpha: 1, duration: 3.5, ease: 'power2.out' }, toNew(103.5))
-    .to(introLangs, { autoAlpha: 0, duration: 2 }, toNew(103.5)) // seletor de idioma sai quando o menu do site desce
-    .to(navLockup, { autoAlpha: 1, duration: 1 }, toNew(107))
-    .to(brandLockup, { autoAlpha: 0, duration: 1 }, toNew(107.5))
-    .to(heroCopy, { y: 0, autoAlpha: 1, stagger: 0.6, duration: 3.5, ease: 'power3.out' }, toNew(106.5))
+    .to(ui, { autoAlpha: 0, duration: 3 }, toNew(91))
+    .to(tagline, { autoAlpha: 0, duration: 2 }, toNew(91))
+    .to(canvasWrap, { autoAlpha: 0, duration: 5 }, toNew(91))
+    .to(product, { autoAlpha: 1, y: 0, duration: 5, ease: 'power3.out' }, toNew(96))
+    .to(brandPin, { '--glow': 0, duration: 4 }, toNew(93))
+    .to(brandLockup, { x: () => M.lock.x, y: () => M.lock.y, scale: () => M.lock.s, duration: 7, ease: 'power2.inOut' }, toNew(93))
+    .to(nav, { yPercent: 0, autoAlpha: 1, duration: 3.5, ease: 'power2.out' }, toNew(96.5))
+    .to(introLangs, { autoAlpha: 0, duration: 2 }, toNew(96.5)) // seletor de idioma sai quando o menu do site desce
+    .to(navLockup, { autoAlpha: 1, duration: 1 }, toNew(100))
+    .to(brandLockup, { autoAlpha: 0, duration: 1 }, toNew(100.5))
+    .to(heroCopy, { y: 0, autoAlpha: 1, stagger: 0.6, duration: 3.5, ease: 'power3.out' }, toNew(99.5))
     .set({}, {}, TOT);
 
   // Trava da hero (29/09, pedido de Armin): depois que a intro termina, a pessoa "cai" no site, na hero
@@ -899,13 +910,80 @@ function build(stage, lenis) {
   };
   if (lenis) lenis.on('scroll', updateLock); else window.addEventListener('scroll', updateLock, { passive: true });
 
+  // Toque dentro da intro (01/10): o Lenis assume o arrasto (syncTouch). O dedo move a página 1:1 e o embalo depois de
+  // soltar é calculado aqui, pela velocidade do dedo (px/ms), mais curto que o embalo nativo do celular, que atravessava
+  // várias cenas num deslize só. Fora da intro (da hero para baixo) o toque volta a ser o nativo, como antes.
+  // O embalo do próprio Lenis depende da taxa de quadros da tela (60 ou 120 Hz), por isso não é usado.
+  const FLING = 420;                                   // ms: distância do embalo = velocidade do dedo × FLING
+  const FLING_MAX = () => window.innerHeight * 1.6;    // embalo máximo por deslize
+  const samples = [];                                  // posições recentes do dedo [tempo, y]
+  window.addEventListener('touchmove', (e) => {
+    const t = now(); samples.push([t, e.touches[0].clientY]);
+    while (samples.length > 2 && t - samples[0][0] > 120) samples.shift();
+  }, { capture: true, passive: true });
+  const flingDist = () => {
+    if (samples.length < 2) return 0;
+    const [t1, y1] = samples[samples.length - 1], [t0, y0] = samples[0];
+    if (now() - t1 > 90 || t1 - t0 < 8) return 0;      // dedo parou antes de soltar: sem embalo
+    const v = (y0 - y1) / (t1 - t0);                   // dedo subindo = rolar para baixo (positivo)
+    return Math.sign(v) * Math.min(Math.abs(v) * FLING, FLING_MAX());
+  };
+  const gateY = (g) => { const st = tl.scrollTrigger; return st.start + (g / TOT) * (st.end - st.start); };
+  // Lenis: embalo próprio zerado (distância = |v| ^ expoente ≈ 0)
+  const noLenisInertia = () => { const v = Math.abs(lenis.velocity); lenis.options.touchInertiaExponent = v > 1 ? -30 : 30; };
+
   if (lenis) {
     // Roda do mouse e trackpad com Lenis (29/09): em vez de bloquear e dar um salto de volta, o passo de cada evento é
     // encurtado antes de o Lenis aplicar, e a rolagem desacelera suave até parar exatamente na hero. Sem trancos.
     lenis.options.virtualScroll = (data) => {
       const ev = data.event;
-      if (!ev || !ev.type.includes('wheel') || !data.deltaY) return true;
-      const dy = data.deltaY, dir = trackWheel(dy), end = endY(), tgt = lenis.targetScroll;
+      if (!ev) return true;
+      const isWheel = ev.type.includes('wheel'), isTouch = ev.type.includes('touch');
+      if (isTouch && !lenis.options.syncTouch) return true;
+      if (!isWheel && !isTouch) return true;
+      const isEnd = isTouch && ev.type === 'touchend';
+      if (isEnd) noLenisInertia();
+      if (!data.deltaY && !isEnd) return true;
+      let step = isEnd ? flingDist() : data.deltaY;
+      if (!step) return true;
+      const dir = isWheel ? trackWheel(step) : Math.sign(step), end = endY(), tgt = lenis.targetScroll;
+      const fling = (d) => { if (d > 0.5 || d < -0.5) queueMicrotask(() => lenis.scrollTo(lenis.targetScroll + d, { lerp: 0.075 })); return true; };
+      const hold = () => { if (ev.cancelable) ev.preventDefault(); return isEnd ? true : false; };
+      // Paradas no fim de cada cena (01/10): descendo, a rolagem para ali e o resto do embalo é descartado;
+      // o 1º gesto novo não mexe (o aviso "Keep scrolling" aparece) e o 2º segue
+      if (dir > 0 && lockState === 'free') {
+        const i = GATES.findIndex((g, k) => gateY(g) >= tgt - 0.5 && !(cur.id === gate.relId && k === gate.relGate));
+        if (i >= 0) {
+          const gy = gateY(GATES[i]);
+          if (tgt < gy - 0.5) {
+            if (tgt + step > gy) {
+              gate.at = i; gate.count = 0; gate.restId = cur.id;
+              step = gy - tgt;
+              if (isEnd) return fling(step);
+              data.deltaY = step; return true;
+            }
+          } else {
+            if (cur.id !== gate.restId && !cur.counted) {
+              cur.counted = true;
+              gate.count += 1;
+              if (gate.count >= GATE_GESTURES) { gate.relId = cur.id; gate.relGate = i; gate.count = 0; gate.at = -1; }
+              else showKeep();
+            }
+            if (gate.relId !== cur.id) return hold();
+          }
+        }
+      }
+      if (isTouch) {
+        // Toque com o Lenis só existe dentro da intro: no fim dela, pousa na hero sem passar
+        if (lockState === 'free' && dir > 0 && tgt < end && tgt + step >= end) {
+          lockState = 'locked'; gestures = 0;
+          landing = true; landingId = cur.id; landingAt = now();
+          step = end - tgt;
+          if (!isEnd) data.deltaY = step;
+        }
+        return isEnd ? fling(step) : true;
+      }
+      const dy = step;
       // Descendo pela intro: pousa suave no topo da hero
       if (lockState === 'free' && dir > 0 && tgt < end && tgt + dy >= end) {
         lockState = 'locked'; gestures = 0;
@@ -948,7 +1026,10 @@ function build(stage, lenis) {
   }
 
   // Toque (celular): dedo descendo = rolar para cima
-  window.addEventListener('touchstart', (e) => { touching = true; landing = false; touchY = e.touches[0].clientY; newGesture(now()); }, { capture: true, passive: true });
+  window.addEventListener('touchstart', (e) => {
+    touching = true; landing = false; touchY = e.touches[0].clientY; newGesture(now()); samples.length = 0;
+    if (lenis) lenis.options.syncTouch = scrollY() < endY() - 1; // Lenis cuida do toque só dentro da intro
+  }, { capture: true, passive: true });
   window.addEventListener('pointerdown', () => { landing = false; }, { capture: true, passive: true }); // clique em link do menu etc.
   window.addEventListener('touchend', () => { touching = false; cur.last = now(); }, { capture: true, passive: true });
   window.addEventListener('touchmove', (e) => {
