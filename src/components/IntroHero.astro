@@ -82,7 +82,14 @@ const book = bookingHref(lang, true);
         <ol class="intro__steps" data-intro-steps>
           <li class="is-on"></li><li></li><li></li><li></li>
         </ol>
-        <p class="intro__cue mono" data-intro-cue><span>{t.ui.scroll}</span><i></i></p>
+        <button type="button" class="intro__cue" data-intro-cue aria-label={t.ui.cueLabel}>
+          <span class="cue__icon cue__icon--mouse" aria-hidden="true"><svg viewBox="0 0 20 30" width="20" height="30"><rect x="1.5" y="1.5" width="17" height="27" rx="8.5" fill="none" stroke="currentColor" stroke-width="2"/><circle class="cue__wheel" cx="10" cy="9" r="2.2" fill="currentColor"/></svg></span>
+          <span class="cue__icon cue__icon--touch" aria-hidden="true"><svg viewBox="0 0 22 34" width="22" height="34"><path d="M5 9l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle class="cue__finger" cx="11" cy="27" r="4.5" fill="currentColor"/></svg></span>
+          <span class="cue__txt">
+            <span class="cue__t cue__t--mouse">{t.ui.scroll}</span><span class="cue__t cue__t--touch">{t.ui.swipe}</span>
+            <span class="cue__t cue__t--mouse cue__t--keep">{t.ui.keepScroll}</span><span class="cue__t cue__t--touch cue__t--keep">{t.ui.keepSwipe}</span>
+          </span>
+        </button>
       </div>
     </div>
 
@@ -92,7 +99,12 @@ const book = bookingHref(lang, true);
 <style>
   .stage { position: relative; background: var(--navy); color: var(--white); }
   .stage__pin { position: relative; min-height: 100svh; overflow: hidden; display: flex; }
-  :global(html.intro-on) .stage__pin { height: 100svh; min-height: 620px; }
+  :global(html.intro-on) .stage__pin { height: 100vh; min-height: 620px; }
+  /* 01/10: no celular a intro ocupa a tela grande (sem a barra do navegador). Com 100svh, quando a barra recolhia,
+     sobrava uma faixa azul embaixo, sem mapa. Os itens de baixo sobem o tamanho da barra (--bar) para não ficarem atrás dela. */
+  @supports (height: 100lvh) {
+    :global(html.intro-on) .stage__pin { --bar: calc(100lvh - 100svh); height: 100lvh; }
+  }
 
   /* HERO */
   .hero { position: relative; z-index: 1; flex: 1; display: flex; align-items: center; padding-block: calc(var(--nav-h) + 40px) 48px;
@@ -127,7 +139,7 @@ const book = bookingHref(lang, true);
   .scene__small { font-size: 13px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--sky); }
 
   /* Crédito obrigatório dos dados do mapa (OpenStreetMap, licença ODbL). O JS acende junto com o mapa. */
-  .intro__credit { position: absolute; right: var(--gutter); bottom: calc(10px + env(safe-area-inset-bottom, 0px)); z-index: 1; margin: 0; font-size: 10px; font-weight: 500; letter-spacing: .04em; color: rgba(199, 218, 235, .7); opacity: 0; pointer-events: none; }
+  .intro__credit { position: absolute; right: var(--gutter); bottom: calc(10px + var(--bar, 0px) + env(safe-area-inset-bottom, 0px)); z-index: 1; margin: 0; font-size: 10px; font-weight: 500; letter-spacing: .04em; color: rgba(199, 218, 235, .7); opacity: 0; pointer-events: none; }
 
   .intro__brand { position: absolute; inset: 0; z-index: 3; display: grid; place-items: center; pointer-events: none; }
   .intro__brand-inner { display: grid; justify-items: center; gap: 28px; }
@@ -150,10 +162,33 @@ const book = bookingHref(lang, true);
   .intro__steps { position: absolute; right: var(--gutter); top: 50%; transform: translateY(-50%); display: grid; gap: 12px; justify-items: end; }
   .intro__steps li { width: 20px; height: 2px; background: rgba(255, 255, 255, .28); transition: width .35s var(--ease-out), background .35s; }
   .intro__steps li.is-on { width: 36px; background: var(--sky); }
-  .intro__cue { position: absolute; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); display: grid; justify-items: center; gap: 10px; font-size: 11px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--on-dark-2); }
-  .intro__cue i { display: block; width: 1px; height: 40px; background: linear-gradient(var(--sky), transparent); position: relative; overflow: hidden; }
-  .intro__cue i::after { content: ""; position: absolute; left: 0; top: -40px; width: 1px; height: 40px; background: #fff; animation: cue 1.6s ease-in-out infinite; }
-  @keyframes cue { to { top: 40px; } }
+  /* Aviso de rolagem (01/10): pílula clicável, maior e mais clara. Computador: mouse e "Scroll down".
+     Celular (tela de toque): seta e dedo subindo e "Swipe up". Tocar avança para a próxima parte da intro.
+     Some ao rolar; volta como "Keep scrolling" quando a pessoa para no meio da intro (o JS liga .is-keep). */
+  .intro__cue { position: absolute; left: 50%; bottom: calc(24px + var(--bar, 0px) + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
+    display: inline-flex; align-items: center; gap: 12px; padding: 10px 20px 10px 14px; border: 1px solid rgba(199, 218, 235, .4); border-radius: 999px;
+    background: rgba(3, 16, 43, .55); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); color: var(--white);
+    font: 700 15px/1.2 var(--font); letter-spacing: .01em; white-space: nowrap; cursor: pointer; pointer-events: auto;
+    transition: opacity .45s var(--ease-out), border-color .2s, background-color .2s; }
+  .intro__cue:hover { border-color: rgba(199, 218, 235, .75); background: rgba(6, 28, 70, .75); }
+  .intro__cue:focus-visible { outline: 2px solid var(--sky); outline-offset: 3px; }
+  .intro__cue.is-hidden { opacity: 0; pointer-events: none; }
+  .cue__icon { display: grid; flex: none; color: var(--sky); }
+  .cue__icon svg { display: block; max-width: none; }
+  .cue__icon--touch, .cue__t--touch, .cue__t--keep { display: none; }
+  .intro__cue.is-keep .cue__t--keep.cue__t--mouse { display: inline; }
+  .intro__cue.is-keep .cue__t--mouse:not(.cue__t--keep) { display: none; }
+  .cue__wheel { animation: cueWheel 1.6s ease-in-out infinite; }
+  .cue__finger { animation: cueFinger 1.8s ease-in-out infinite; }
+  @keyframes cueWheel { 0% { transform: translateY(0); opacity: 1; } 70% { transform: translateY(9px); opacity: 0; } 100% { transform: translateY(0); opacity: 0; } }
+  @keyframes cueFinger { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: 1; } 75% { transform: translateY(-15px); opacity: 0; } 100% { transform: translateY(-15px); opacity: 0; } }
+  @media (hover: none) and (pointer: coarse) {
+    .cue__icon--mouse, .cue__t--mouse { display: none !important; }
+    .cue__icon--touch { display: grid; }
+    .cue__t--touch:not(.cue__t--keep) { display: inline; }
+    .intro__cue.is-keep .cue__t--touch:not(.cue__t--keep) { display: none; }
+    .intro__cue.is-keep .cue__t--touch.cue__t--keep { display: inline; }
+  }
 
   /* Estado inicial do hero enquanto a intro roda (o GSAP revela no fim) */
   :global(html.intro-on) .hero__copy > * { opacity: 0; }
@@ -161,7 +196,7 @@ const book = bookingHref(lang, true);
   :global(html.intro-on) .hero-product { opacity: 0; }
 
   @media (max-width: 1023px) {
-    .hero { align-items: stretch; padding-block: calc(var(--nav-h) + 28px) 24px; }
+    .hero { align-items: stretch; padding-block: calc(var(--nav-h) + 28px) calc(24px + var(--bar, 0px)); }
     .hero__grid { grid-template-columns: 1fr; grid-template-rows: auto 1fr; gap: 28px; }
     .hero-product { align-self: center; max-height: 100%; }
   }
@@ -177,7 +212,9 @@ const book = bookingHref(lang, true);
     .intro__steps { display: none; }
     .scene { top: calc(var(--nav-h) + 4vh); gap: 16px; }
     .scene__promise { font-size: clamp(32px, 9.4vw, 44px); }
+    .intro__lockup { font-size: clamp(34px, 10.2vw, 46px); } /* 01/10: BORE SPOT maior no celular */
+    .intro__cue { bottom: calc(44px + var(--bar, 0px) + env(safe-area-inset-bottom, 0px)); } /* acima da escala e do crédito do mapa */
     .intro__vignette { background: linear-gradient(180deg, rgba(3, 16, 43, .85) 0%, rgba(3, 16, 43, .55) 45%, transparent 62%, rgba(3, 16, 43, .4)); }
   }
-  @media (prefers-reduced-motion: reduce) { .intro__cue i::after { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .cue__wheel, .cue__finger { animation: none; } }
 </style>

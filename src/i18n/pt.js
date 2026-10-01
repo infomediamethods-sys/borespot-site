@@ -22,7 +22,12 @@ export default {
     book: 'Agende uma ligação de 15 min', // F-B5, F-H1 (texto do site atual)
     talk: 'Fale com nossa equipe', // F-H1
     requestSupport: 'Solicitar suporte', // F-H1
+    // Aviso de rolagem da intro (01/10): computador rola para baixo; no celular o dedo arrasta para cima
     scroll: 'Role para baixo',
+    swipe: 'Arraste para cima',
+    keepScroll: 'Continue rolando',
+    keepSwipe: 'Continue arrastando para cima',
+    cueLabel: 'Ir para a próxima parte',
     exampleView: 'Exemplo ilustrativo',
     // O site atual em português mostra "3.5M+" (com ponto), igual ao inglês.
     numberLocale: 'en-US',

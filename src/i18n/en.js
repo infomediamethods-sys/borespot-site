@@ -21,7 +21,12 @@ export default {
     book: 'Book a 15-Min Call', // F-B5, F-H1 (texto do site atual, mantido: decisão de Armin 27/09)
     talk: 'Talk to Our Team', // F-H1 (mantido: decisão de Armin 27/09)
     requestSupport: 'Request Support', // F-H1
-    scroll: 'Scroll',
+    // Aviso de rolagem da intro (01/10): computador rola para baixo; no celular o dedo arrasta para cima
+    scroll: 'Scroll down',
+    swipe: 'Swipe up',
+    keepScroll: 'Keep scrolling',
+    keepSwipe: 'Keep swiping up',
+    cueLabel: 'Go to the next part',
     exampleView: 'Example view',
     numberLocale: 'en-US',
   },

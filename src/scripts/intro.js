@@ -82,6 +82,21 @@ function build(stage, lenis) {
   let base = null; // ruas e utilidades pré-renderizadas
   let world = null;
   let usDots = [];
+  // Pausas de leitura (01/10, pedido de Armin): depois que cada cena termina de animar, tudo fica parado na tela por mais
+  // um trecho de rolagem (umas duas roladas) antes de sair. [ponto na linha do tempo antiga, tamanho da pausa].
+  // O desenho do canvas e os limites por progresso continuam escritos na linha do tempo antiga (0 a 112); toOld converte.
+  const HOLDS = [[37.5, 12], [59.5, 12], [88, 4]];
+  const TOT = 112 + HOLDS.reduce((a, h) => a + h[1], 0); // fim da linha do tempo (100 até 30/09; 112 com a marca mais lenta; 140 com as pausas)
+  const toNew = (o) => HOLDS.reduce((n, [at, len]) => (o >= at ? n + len : n), o);
+  const toOld = (n) => {
+    let shift = 0;
+    for (const [at, len] of HOLDS) {
+      if (n < at + shift) return n - shift;
+      if (n < at + shift + len) return at;
+      shift += len;
+    }
+    return n - shift;
+  };
   let converge = [];
   const particles = [];
   let flashT = -1;
@@ -297,6 +312,7 @@ function build(stage, lenis) {
     const f = 0.27 + i * (few ? 0.024 : 0.013);
     const special = few ? 2 : 4;
     if (p < f) return 'waiting';
+    if (i === 0) return 'active'; // 01/10, pedido de Armin: o primeiro pin fica Active (dois Actives na cena 2)
     if (i === special) { if (p < 0.345) return 'cleared'; if (p < 0.372) return 'renewal'; return 'active'; }
     return 'cleared';
   }
@@ -524,7 +540,7 @@ function build(stage, lenis) {
   }
 
   function render(now) {
-    const p = tl.progress();
+    const p = toOld(tl.progress() * TOT) / 100;
     const wt = (now - worldT0) / 1000;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.globalAlpha = 1;
@@ -546,9 +562,9 @@ function build(stage, lenis) {
 
     // Cena 3: mapa dos EUA em pontos, cobertura acendendo
     const mapIn = easeOut(seg(p, 0.43, 0.49));
-    const mapOut = seg(p, 0.63, 0.7);
-    const conv = seg(p, 0.635, 0.715);
-    if (mapIn > 0 && converge.length) {
+    // 01/10: o mapa dos estados some antes da marca entrar (antes ficava por baixo do BORE SPOT e virava o pin)
+    const mapOut = seg(p, 0.6, 0.645);
+    if (mapIn > 0 && mapOut < 1 && converge.length) {
       const ms = lerp(1.16, 1, mapIn);
       const cx = usDots[0].cx, cy = usDots[0].cy;
       const tx = (x) => cx + (x - cx) * ms, ty = (y) => cy + (y - cy) * ms;
@@ -585,28 +601,10 @@ function build(stage, lenis) {
       ctx.shadowBlur = 0;
       ctx.restore();
 
-      // Cena 4: pontos voam e formam o pin da logo
-      if (conv > 0) {
-        const pr = brandPin.getBoundingClientRect();
-        const sr = pinEl.getBoundingClientRect();
-        const fade = 1 - seg(p, 0.7, 0.735);
-        ctx.save();
-        converge.forEach((cv) => {
-          const k = easeInOut(clamp((conv * 1.35 - cv.delay)));
-          const sx = tx(cv.src.x), sy = ty(cv.src.y);
-          const ex = pr.left - sr.left + cv.tu * pr.width, ey = pr.top - sr.top + cv.tv * pr.height;
-          const x = lerp(sx, ex, k), y = lerp(sy, ey, k);
-          ctx.globalAlpha = fade * clamp(conv * 4);
-          ctx.fillStyle = k > 0.9 ? '#FFFFFF' : '#73D4F7';
-          const s = cv.size * (1 - 0.3 * k);
-          ctx.fillRect(x - s / 2, y - s / 2, s, s);
-        });
-        ctx.restore();
-      }
     }
 
-    // Brilho da logo: flash curto e partículas quando a rolagem passa por 78%
-    if (prevP < 0.78 && p >= 0.78) burst();
+    // Brilho da logo: flash curto e partículas quando a rolagem passa por 80 (unidades da linha do tempo)
+    if (prevP < 0.8 && p >= 0.8) burst();
     prevP = p;
     if (flashT > 0) {
       const f = clamp((now - flashT) / 260);
@@ -725,7 +723,9 @@ function build(stage, lenis) {
 
   // Comprimento da rolagem da intro (além dos 100vh da tela fixa). Mais comprido = mais lento.
   // Desktop 2250vh (total 2350vh), celular 1650vh (total 1750vh). 3x mais lenta que a v2.4, a pedido de Armin (24/09).
-  const scrollLen = () => window.innerHeight * (window.innerWidth < 768 ? 16.5 : 22.5);
+  // 01/10: a cena da marca ficou mais longa (linha do tempo vai até TOT, não 100); a rolagem cresce na mesma proporção,
+  // então as cenas 1 a 3 continuam com a mesma velocidade de antes e só a marca fica mais lenta.
+  const scrollLen = () => window.innerHeight * (window.innerWidth < 768 ? 16.5 : 22.5) * TOT / 100;
   const OUT = RM ? { autoAlpha: 0, stagger: 0.25, duration: 2.5, ease: 'power2.in' } : { y: -50, autoAlpha: 0, filter: 'blur(8px)', stagger: 0.25, duration: 2.5, ease: 'power2.in' };
   const IN0 = RM ? { autoAlpha: 0 } : { y: 40, autoAlpha: 0, filter: 'blur(10px)' };
   const IN1 = RM ? { autoAlpha: 1, stagger: 0.35, duration: 3, ease: 'power3.out' } : { y: 0, autoAlpha: 1, filter: 'blur(0px)', stagger: 0.35, duration: 3, ease: 'power3.out' };
@@ -740,6 +740,28 @@ function build(stage, lenis) {
   let seen = false;
   measure();
 
+  // Aviso de rolagem (01/10): aparece no começo; some ao rolar; volta como "Keep scrolling" se a pessoa parar 4 s
+  // no meio da intro. Tocar nele leva até a próxima parte (pontos em unidades da linha do tempo nova).
+  const CUE_STOPS = HOLDS.map(([at, len]) => toNew(at) - len + Math.min(4, len / 3)); // um pouco depois do começo de cada pausa
+  const CUE_END = 0.96; // linha antiga: depois disso a marca já está indo para o menu
+  let idleT = 0;
+  function cueUpdate(u) {
+    clearTimeout(idleT);
+    if (u < 0.03) { cue.classList.remove('is-hidden', 'is-keep'); return; }
+    cue.classList.add('is-hidden');
+    if (u < CUE_END) idleT = setTimeout(() => { cue.classList.add('is-keep'); cue.classList.remove('is-hidden'); }, 4000);
+  }
+  cue.addEventListener('click', () => {
+    const st = tl.scrollTrigger;
+    if (!st) return;
+    const n = st.progress * TOT;
+    const next = CUE_STOPS.find((x) => x > n + 0.5);
+    const y = next === undefined ? Math.ceil(st.end) + 1 : st.start + (next / TOT) * (st.end - st.start);
+    const dur = Math.min(4, Math.max(1.6, Math.abs(y - window.scrollY) / 2000));
+    if (lenis) lenis.scrollTo(y, { duration: dur, easing: (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2) });
+    else window.scrollTo({ top: y, behavior: 'smooth' });
+  });
+
   const tl = gsap.timeline({
     defaults: { ease: 'none' },
     scrollTrigger: {
@@ -753,9 +775,10 @@ function build(stage, lenis) {
       onRefreshInit: measure,
       onUpdate: (self) => {
         const p = self.progress;
-        const idx = p < 0.19 ? 0 : p < 0.41 ? 1 : p < 0.63 ? 2 : 3;
+        const u = toOld(p * TOT) / 100;
+        const idx = u < 0.19 ? 0 : u < 0.41 ? 1 : u < 0.63 ? 2 : 3;
         steps.forEach((s, i) => s.classList.toggle('is-on', i === idx));
-        cue.style.opacity = p < 0.03 ? '' : '0';
+        cueUpdate(u);
         wake();
         // Roda do mouse mais lenta enquanto a intro está na tela
         // 29/09: sobe da velocidade da intro para a do site aos poucos, nos últimos 8% (antes era um degrau a 0,5% do fim)
@@ -767,40 +790,40 @@ function build(stage, lenis) {
   });
 
   // Cena 1 sai
-  tl.to(words(0), OUT, 16).to(reality(0), { y: -30, autoAlpha: 0, duration: 2, ease: 'power2.in' }, 17)
+  tl.to(words(0), OUT, toNew(16)).to(reality(0), { y: -30, autoAlpha: 0, duration: 2, ease: 'power2.in' }, toNew(17))
     // Cena 2
-    .fromTo(words(1), IN0, IN1, 20.5)
-    .fromTo(reality(1), { y: 16, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 2.5, ease: 'power3.out' }, 23)
-    .to(words(1), OUT, 37.5).to(reality(1), { y: -30, autoAlpha: 0, duration: 2, ease: 'power2.in' }, 38.5)
+    .fromTo(words(1), IN0, IN1, toNew(20.5))
+    .fromTo(reality(1), { y: 16, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 2.5, ease: 'power3.out' }, toNew(23))
+    .to(words(1), OUT, toNew(37.5)).to(reality(1), { y: -30, autoAlpha: 0, duration: 2, ease: 'power2.in' }, toNew(38.5))
     // Cena 3: prova
-    .fromTo(scenes[2].querySelector('.scene__num'), { y: 30, autoAlpha: 0, scale: 0.92, transformOrigin: '0 100%' }, { y: 0, autoAlpha: 1, scale: 1, duration: 3, ease: 'power3.out' }, 42.5)
-    .to(proxy, { v: proofTarget, duration: 11, ease: 'power2.out', onUpdate: () => { proofEl.textContent = fmt(proofDec ? proxy.v : Math.round(proxy.v)); } }, 44.5)
-    .fromTo(words(2), IN0, { ...IN1, stagger: 0.25 }, 45)
-    .fromTo(scenes[2].querySelector('.scene__small'), { y: 12, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 2.5, ease: 'power3.out' }, 49)
-    .to([scenes[2].querySelector('.scene__num'), ...words(2), scenes[2].querySelector('.scene__small')], { ...OUT, stagger: 0.15 }, 60)
-    // Cena 4: marca
-    .to(brandWord, { autoAlpha: 1, letterSpacing: '0.03em', duration: 5, ease: 'power3.out' }, 66)
-    .fromTo(brandWord, { filter: RM ? 'blur(0px)' : 'blur(12px)' }, { filter: 'blur(0px)', duration: 4, ease: 'power3.out' }, 66)
-    .to(brandPin, { autoAlpha: 1, duration: 3 }, 70)
-    .fromTo(brandWord, { backgroundPosition: '100% 0' }, { backgroundPosition: '0% 0', duration: 5.5, ease: 'power1.inOut' }, 72.5)
-    .fromTo(brandPin, { '--glow': 0 }, { '--glow': 1, duration: 1.5, ease: 'power4.out' }, 78)
-    .to(brandPin, { scale: 1.12, duration: 1, ease: 'power2.out' }, 78)
-    .to(brandPin, { scale: 1, duration: 2, ease: 'power2.inOut' }, 79)
-    .to(brandPin, { '--glow': 0.5, duration: 5 }, 80)
-    .to(tagline, { autoAlpha: 1, y: 0, duration: 3, ease: 'power3.out' }, 80.5)
-    // Saída: a marca vai para a navbar e as imagens do produto aparecem no lugar do antigo painel do mapa
-    .to(ui, { autoAlpha: 0, duration: 3 }, 86)
-    .to(tagline, { autoAlpha: 0, duration: 2 }, 86)
-    .to(canvasWrap, { autoAlpha: 0, duration: 5 }, 86)
-    .to(product, { autoAlpha: 1, y: 0, duration: 5, ease: 'power3.out' }, 91)
-    .to(brandPin, { '--glow': 0, duration: 4 }, 88)
-    .to(brandLockup, { x: () => M.lock.x, y: () => M.lock.y, scale: () => M.lock.s, duration: 7, ease: 'power2.inOut' }, 88)
-    .to(nav, { yPercent: 0, autoAlpha: 1, duration: 3.5, ease: 'power2.out' }, 91.5)
-    .to(introLangs, { autoAlpha: 0, duration: 2 }, 91.5) // seletor de idioma sai quando o menu do site desce
-    .to(navLockup, { autoAlpha: 1, duration: 1 }, 95)
-    .to(brandLockup, { autoAlpha: 0, duration: 1 }, 95.5)
-    .to(heroCopy, { y: 0, autoAlpha: 1, stagger: 0.6, duration: 3.5, ease: 'power3.out' }, 94.5)
-    .set({}, {}, 100);
+    .fromTo(scenes[2].querySelector('.scene__num'), { y: 30, autoAlpha: 0, scale: 0.92, transformOrigin: '0 100%' }, { y: 0, autoAlpha: 1, scale: 1, duration: 3, ease: 'power3.out' }, toNew(42.5))
+    .to(proxy, { v: proofTarget, duration: 11, ease: 'power2.out', onUpdate: () => { proofEl.textContent = fmt(proofDec ? proxy.v : Math.round(proxy.v)); } }, toNew(44.5))
+    .fromTo(words(2), IN0, { ...IN1, stagger: 0.25 }, toNew(45))
+    .fromTo(scenes[2].querySelector('.scene__small'), { y: 12, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 2.5, ease: 'power3.out' }, toNew(49))
+    .to([scenes[2].querySelector('.scene__num'), ...words(2), scenes[2].querySelector('.scene__small')], { ...OUT, stagger: 0.15 }, toNew(60))
+    // Cena 4: marca. 01/10: mais lenta e com uma pausa no fim, para dar tempo de ver o BORE SPOT e o brilho antes de descer
+    .to(brandWord, { autoAlpha: 1, letterSpacing: '0.03em', duration: 7, ease: 'power3.out' }, toNew(66))
+    .fromTo(brandWord, { filter: RM ? 'blur(0px)' : 'blur(12px)' }, { filter: 'blur(0px)', duration: 6, ease: 'power3.out' }, toNew(66))
+    .to(brandPin, { autoAlpha: 1, duration: 4 }, toNew(71))
+    .fromTo(brandWord, { backgroundPosition: '100% 0' }, { backgroundPosition: '0% 0', duration: 7, ease: 'power1.inOut' }, toNew(74))
+    .fromTo(brandPin, { '--glow': 0 }, { '--glow': 1, duration: 2, ease: 'power4.out' }, toNew(80))
+    .to(brandPin, { scale: 1.12, duration: 1.2, ease: 'power2.out' }, toNew(80))
+    .to(brandPin, { scale: 1, duration: 2.5, ease: 'power2.inOut' }, toNew(81.2))
+    .to(brandPin, { '--glow': 0.6, duration: 6 }, toNew(82))
+    .to(tagline, { autoAlpha: 1, y: 0, duration: 3.5, ease: 'power3.out' }, toNew(83))
+    // Saída: a marca vai para a navbar e as imagens do produto aparecem
+    .to(ui, { autoAlpha: 0, duration: 3 }, toNew(98))
+    .to(tagline, { autoAlpha: 0, duration: 2 }, toNew(98))
+    .to(canvasWrap, { autoAlpha: 0, duration: 5 }, toNew(98))
+    .to(product, { autoAlpha: 1, y: 0, duration: 5, ease: 'power3.out' }, toNew(103))
+    .to(brandPin, { '--glow': 0, duration: 4 }, toNew(100))
+    .to(brandLockup, { x: () => M.lock.x, y: () => M.lock.y, scale: () => M.lock.s, duration: 7, ease: 'power2.inOut' }, toNew(100))
+    .to(nav, { yPercent: 0, autoAlpha: 1, duration: 3.5, ease: 'power2.out' }, toNew(103.5))
+    .to(introLangs, { autoAlpha: 0, duration: 2 }, toNew(103.5)) // seletor de idioma sai quando o menu do site desce
+    .to(navLockup, { autoAlpha: 1, duration: 1 }, toNew(107))
+    .to(brandLockup, { autoAlpha: 0, duration: 1 }, toNew(107.5))
+    .to(heroCopy, { y: 0, autoAlpha: 1, stagger: 0.6, duration: 3.5, ease: 'power3.out' }, toNew(106.5))
+    .set({}, {}, TOT);
 
   // Trava da hero (29/09, pedido de Armin): depois que a intro termina, a pessoa "cai" no site, na hero
   // ("Your 811 tickets, handled end-to-end."). Rolar para cima a partir dali não volta para a animação

@@ -22,7 +22,12 @@ export default {
     book: 'Agenda una llamada de 15 min', // F-B5, F-H1 (texto del sitio actual)
     talk: 'Habla con nuestro equipo', // F-H1
     requestSupport: 'Solicitar soporte', // F-H1
-    scroll: 'Desplázate',
+    // Aviso de rolagem da intro (01/10): computador rola para baixo; no celular o dedo arrasta para cima
+    scroll: 'Desplázate hacia abajo',
+    swipe: 'Desliza hacia arriba',
+    keepScroll: 'Sigue desplazándote',
+    keepSwipe: 'Sigue deslizando hacia arriba',
+    cueLabel: 'Ir a la siguiente parte',
     exampleView: 'Vista de ejemplo',
     // El sitio actual en español muestra "3.5M+" (con punto), igual que en inglés.
     numberLocale: 'en-US',
