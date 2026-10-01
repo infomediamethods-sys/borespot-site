@@ -763,10 +763,14 @@ function build(stage, lenis) {
   // Paradas (unidades da linha nova): fim da cena 2 (pins prontos), fim da cena 3 (número e estados) e marca com o brilho.
   const GATES = [toNew(37.5) - 1, toNew(59.5) - 1, toNew(88)];
   const GATE_GESTURES = 2; // gestos para seguir depois de parar: o 1º não mexe, o 2º desce
+  // Correção 01/10: quem gira a roda sem parar (ou desliza no trackpad sem pausa) nunca começava um "gesto novo"
+  // e ficava preso na parada. Agora, depois de GATE_DWELL ms parado ali, rolar mais GATE_PUSH px também libera.
+  const GATE_DWELL = 1200;
+  const GATE_PUSH = 300;
   const GATE_SNAP = 1.5; // unidades: gesto novo que começa até essa distância antes da parada já conta como o 1º
   const CUE_STOPS = GATES;
   const CUE_END = 0.96; // linha antiga: depois disso a marca já está indo para o menu
-  const gate = { at: -1, count: 0, restId: -1, relId: -1, relGate: -1, lastMoveId: -1 }; // parada atual, gestos contados, gesto que chegou, gesto que liberou
+  const gate = { at: -1, count: 0, restId: -1, relId: -1, relGate: -1, lastMoveId: -1, since: 0, acc: 0, prevId: -1, prevAbs: 0 }; // parada atual, gestos contados, gesto que chegou, gesto que liberou
   function cueUpdate(u) {
     if (u < 0.03) { cue.classList.remove('is-hidden', 'is-keep'); return; }
     if (u < CUE_END) { cue.classList.add('is-keep'); cue.classList.remove('is-hidden'); return; }
@@ -780,7 +784,7 @@ function build(stage, lenis) {
     const next = CUE_STOPS.find((x) => x > n + 0.5);
     const y = next === undefined ? Math.ceil(st.end) + 1 : st.start + (next / TOT) * (st.end - st.start);
     const dur = Math.min(4, Math.max(1.6, Math.abs(y - window.scrollY) / 2000));
-    gate.at = next === undefined ? -1 : CUE_STOPS.indexOf(next); gate.count = 0; gate.restId = -1; gate.relId = -1;
+    gate.at = next === undefined ? -1 : CUE_STOPS.indexOf(next); gate.count = 0; gate.restId = -1; gate.relId = -1; gate.since = now() + dur * 1000; gate.acc = 0;
     if (lenis) lenis.scrollTo(y, { duration: dur, easing: (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2) });
     else window.scrollTo({ top: y, behavior: 'smooth' });
   });
@@ -971,7 +975,7 @@ function build(stage, lenis) {
           // como o 1º gesto, para não precisar de um gesto a mais (01/10)
           const near = tgt >= gy - gateY(GATE_SNAP) + gateY(0) && tgt < gy - 0.5 && cur.id !== gate.lastMoveId;
           if (near && !cur.counted) {
-            cur.counted = true; gate.at = i; gate.count = 1; gate.restId = -1; showKeep();
+            cur.counted = true; gate.at = i; gate.count = 1; gate.restId = -1; gate.since = now(); gate.acc = 0; showKeep();
             step = gy - tgt;
             if (isEnd) return fling(step);
             data.deltaY = step; return true;
@@ -979,20 +983,33 @@ function build(stage, lenis) {
           if (near) return hold();
           if (tgt < gy - 0.5) {
             if (tgt + step > gy) {
-              gate.at = i; gate.count = 0; gate.restId = cur.id;
+              gate.at = i; gate.count = 0; gate.restId = cur.id; gate.since = now(); gate.acc = 0;
               step = gy - tgt;
               if (isEnd) return fling(step);
               data.deltaY = step; return true;
             }
             gate.lastMoveId = cur.id;
           } else {
-            if (cur.id !== gate.restId && !cur.counted) {
+            if (gate.at !== i) { gate.at = i; gate.count = 0; gate.restId = -1; gate.since = now(); gate.acc = 0; }
+            // Rolagem contínua (um gesto só, sem pausa, há mais de GATE_DWELL ms e parado aqui há mais de GATE_DWELL ms):
+            // a própria insistência libera. Não conta o embalo que vai morrendo (passos cada vez menores) nem gestos
+            // curtos separados, que seguem a regra dos 2 gestos.
+            const abs = isEnd ? 0 : Math.abs(step);
+            if (gate.prevId !== cur.id) { gate.prevId = cur.id; gate.prevAbs = 0; }
+            const decaying = abs < gate.prevAbs * 0.97 || (abs <= gate.prevAbs && abs < 30); // embalo do trackpad: passos que só diminuem ou repetem pequenos
+            gate.prevAbs = abs;
+            if (!decaying && now() - cur.start > GATE_DWELL && now() - gate.since > GATE_DWELL) {
+              gate.acc += abs;
+              if (gate.acc >= GATE_PUSH) { gate.relId = cur.id; gate.relGate = i; gate.count = 0; gate.at = -1; }
+            }
+            const released = () => gate.relId === cur.id && gate.relGate === i;
+            if (!released() && cur.id !== gate.restId && !cur.counted) {
               cur.counted = true;
               gate.count += 1;
               if (gate.count >= GATE_GESTURES) { gate.relId = cur.id; gate.relGate = i; gate.count = 0; gate.at = -1; }
               else showKeep();
             }
-            if (gate.relId !== cur.id) return hold();
+            if (!released()) return hold();
           }
         }
       }
