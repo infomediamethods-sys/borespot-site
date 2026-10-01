@@ -745,22 +745,20 @@ function build(stage, lenis) {
   let seen = false;
   measure();
 
-  // Aviso de rolagem (01/10): aparece no começo; some ao rolar; volta como "Keep scrolling" se a pessoa parar 4 s
-  // no meio da intro. Tocar nele leva até a próxima parte (pontos em unidades da linha do tempo nova).
+  // Aviso de rolagem (01/10): aparece no começo como "Swipe up"; depois fica sempre presente como "Keep swiping up",
+  // menor e pulsando no mesmo lugar até o fim da intro. Tocar nele leva até a próxima parte.
   // Paradas (unidades da linha nova): fim da cena 2 (pins prontos), fim da cena 3 (número e estados) e marca com o brilho.
   const GATES = [toNew(37.5) - 1, toNew(59.5) - 1, toNew(88)];
   const GATE_GESTURES = 2; // gestos para seguir depois de parar: o 1º não mexe, o 2º desce
   const CUE_STOPS = GATES;
   const CUE_END = 0.96; // linha antiga: depois disso a marca já está indo para o menu
-  let idleT = 0;
   const gate = { at: -1, count: 0, restId: -1, relId: -1, relGate: -1 }; // parada atual, gestos contados, gesto que chegou, gesto que liberou
   function cueUpdate(u) {
-    clearTimeout(idleT);
     if (u < 0.03) { cue.classList.remove('is-hidden', 'is-keep'); return; }
+    if (u < CUE_END) { cue.classList.add('is-keep'); cue.classList.remove('is-hidden'); return; }
     cue.classList.add('is-hidden');
-    if (u < CUE_END) idleT = setTimeout(() => { cue.classList.add('is-keep'); cue.classList.remove('is-hidden'); }, 4000);
   }
-  const showKeep = () => { clearTimeout(idleT); cue.classList.add('is-keep'); cue.classList.remove('is-hidden'); };
+  const showKeep = () => { cue.classList.add('is-keep'); cue.classList.remove('is-hidden'); };
   cue.addEventListener('click', () => {
     const st = tl.scrollTrigger;
     if (!st) return;

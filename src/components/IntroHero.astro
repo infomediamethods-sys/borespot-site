@@ -167,22 +167,28 @@ const book = bookingHref(lang, true);
   .intro__steps li.is-on { width: 36px; background: var(--sky); }
   /* Aviso de rolagem (01/10): pílula clicável, maior e mais clara. Computador: mouse e "Scroll down".
      Celular (tela de toque): seta e dedo subindo e "Swipe up". Tocar avança para a próxima parte da intro.
-     Some ao rolar; volta como "Keep scrolling" quando a pessoa para no meio da intro (o JS liga .is-keep). */
+     A primeira chamada fica maior; depois vira "Keep swiping up", menor, fixo no mesmo lugar e pulsando. */
   .intro__cue { position: absolute; left: 50%; bottom: calc(24px + var(--bar, 0px) + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
     display: inline-flex; align-items: center; gap: 12px; padding: 10px 20px 10px 14px; border: 1px solid rgba(199, 218, 235, .4); border-radius: 999px;
     background: rgba(3, 16, 43, .55); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); color: var(--white);
     font: 700 15px/1.2 var(--font); letter-spacing: .01em; white-space: nowrap; cursor: pointer; pointer-events: auto;
-    transition: opacity .45s var(--ease-out), border-color .2s, background-color .2s; }
+    transition: opacity .45s var(--ease-out), border-color .2s, background-color .2s, padding .25s var(--ease-out), font-size .25s var(--ease-out); }
   .intro__cue:hover { border-color: rgba(199, 218, 235, .75); background: rgba(6, 28, 70, .75); }
   .intro__cue:focus-visible { outline: 2px solid var(--sky); outline-offset: 3px; }
   .intro__cue.is-hidden { opacity: 0; pointer-events: none; }
+  .intro__cue.is-keep { gap: 9px; padding: 8px 16px 8px 12px; font-size: 13px; animation: cuePulse 1.7s ease-in-out infinite; }
   .cue__icon { display: grid; flex: none; color: var(--sky); }
   .cue__icon svg { display: block; max-width: none; }
+  .intro__cue.is-keep .cue__icon { transform: scale(.84); transform-origin: center; }
   .cue__icon--touch, .cue__t--touch, .cue__t--keep { display: none; }
   .intro__cue.is-keep .cue__t--keep.cue__t--mouse { display: inline; }
   .intro__cue.is-keep .cue__t--mouse:not(.cue__t--keep) { display: none; }
   .cue__wheel { animation: cueWheel 1.6s ease-in-out infinite; }
   .cue__finger { animation: cueFinger 1.8s ease-in-out infinite; }
+  @keyframes cuePulse {
+    0%, 100% { transform: translateX(-50%) scale(1); box-shadow: 0 0 0 0 rgba(115, 212, 247, .18); border-color: rgba(199, 218, 235, .34); }
+    50% { transform: translateX(-50%) scale(1.045); box-shadow: 0 0 0 8px rgba(115, 212, 247, 0); border-color: rgba(115, 212, 247, .68); }
+  }
   @keyframes cueWheel { 0% { transform: translateY(0); opacity: 1; } 70% { transform: translateY(9px); opacity: 0; } 100% { transform: translateY(0); opacity: 0; } }
   @keyframes cueFinger { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: 1; } 75% { transform: translateY(-15px); opacity: 0; } 100% { transform: translateY(-15px); opacity: 0; } }
   @media (hover: none) and (pointer: coarse) {
@@ -219,5 +225,5 @@ const book = bookingHref(lang, true);
     .intro__cue { bottom: calc(44px + var(--bar, 0px) + env(safe-area-inset-bottom, 0px)); } /* acima da escala e do crédito do mapa */
     .intro__vignette { background: linear-gradient(180deg, rgba(3, 16, 43, .85) 0%, rgba(3, 16, 43, .55) 45%, transparent 62%, rgba(3, 16, 43, .4)); }
   }
-  @media (prefers-reduced-motion: reduce) { .cue__wheel, .cue__finger { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .intro__cue.is-keep, .cue__wheel, .cue__finger { animation: none; } }
 </style>
