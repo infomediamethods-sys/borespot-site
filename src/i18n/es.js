@@ -29,7 +29,7 @@ export default {
     keepSwipe: 'Sigue deslizando hacia arriba',
     cueLabel: 'Ir a la siguiente parte',
     exampleView: 'Vista de ejemplo',
-    // El sitio actual en español muestra "3.5M+" (con punto), igual que en inglés.
+    // El sitio actual en español mostraba "3.5M+"; desde el 01/10 es "5M+" (Armin).
     numberLocale: 'en-US',
   },
 
@@ -207,7 +207,7 @@ export default {
     lead: 'Soporte operativo real, a cargo de gente que conoce la obra subterránea.', // F-E1, F-E2
     items: [
       { icon: 'people', title: 'Gente al frente', text: 'Personas reales gestionan tus tickets, de la apertura al cierre.' }, // F-E2, F-A4
-      { icon: 'route', title: 'Hecho para operaciones subterráneas', text: 'Más de 6 años en operaciones subterráneas y más de 3,5 millones de pies respaldados.' }, // F-D1, F-D3 (29/09)
+      { icon: 'route', title: 'Hecho para operaciones subterráneas', text: 'Más de 6 años en operaciones subterráneas y más de 5 millones de pies respaldados.' }, // F-D1, F-D3 (29/09)
       { icon: 'lang', title: 'Inglés, español y portugués', text: 'Coordinación multilingüe para equipos de campo y oficina.' }, // F-C5, F-D4
       { icon: 'clock', title: 'Acción el mismo día', text: 'Los tickets avanzan el mismo día en que llegan. Damos seguimiento antes de que alguien tenga que pedirlo.' }, // F-A7 (el cómo queda en el paso 02 del proceso; 29/09)
     ],
@@ -217,7 +217,7 @@ export default {
       sides: ['Tu equipo', 'Nos encargamos'],
       core: 'Equipo Bore Spot',
       nodes: { crew: 'Cuadrilla', office: 'Oficina', owner: 'Dueño', center: 'Centro 811', utility: 'Empresas de|servicios públicos', locator: 'Localizadores' },
-      proof: ['6+ años', '3.5M+ pies respaldados'],
+      proof: ['6+ años', '5M+ pies respaldados'],
       stories: [
         { from: 'crew', lang: 'ES', to: 'locator', action: 'Localizador contactado', back: 'Cleared' },
         { from: 'office', lang: 'EN', to: 'center', action: 'Ticket abierto', back: 'Mismo día' },

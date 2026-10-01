@@ -208,7 +208,7 @@ export default {
     lead: 'Real operational support, run by people who know underground work.', // F-E1, F-E2
     items: [
       { icon: 'people', title: 'Human-led', text: 'Real people run your tickets, from call-in to closeout.' }, // F-E2, F-A4
-      { icon: 'route', title: 'Built around underground operations', text: '6+ years in underground operations and 3.5M+ feet supported.' }, // F-D1, F-D3 (29/09: prova no corpo)
+      { icon: 'route', title: 'Built around underground operations', text: '6+ years in underground operations and 5M+ feet supported.' }, // F-D1, F-D3 (29/09: prova no corpo)
       { icon: 'lang', title: 'English, Spanish and Portuguese', text: 'Multilingual coordination for field and office teams.' }, // F-C5, F-D4
       { icon: 'clock', title: 'Same-day action', text: 'Tickets move the day they come in. We follow up before anyone has to ask.' }, // F-A7 (o como fica no passo 02 do processo; 29/09)
     ],
@@ -219,7 +219,7 @@ export default {
       sides: ['Your team', 'We handle'],
       core: 'Bore Spot team',
       nodes: { crew: 'Field crew', office: 'Office', owner: 'Owner', center: '811 center', utility: 'Utilities', locator: 'Locators' },
-      proof: ['6+ years', '3.5M+ feet supported'],
+      proof: ['6+ years', '5M+ feet supported'],
       stories: [
         { from: 'crew', lang: 'ES', to: 'locator', action: 'Locator follow-up', back: 'Cleared' },
         { from: 'office', lang: 'EN', to: 'center', action: 'Ticket called in', back: 'Same day' },

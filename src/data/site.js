@@ -47,7 +47,7 @@ export const PROJECT_TYPES = ['HDD', 'Fiber Installation', 'Plow', 'Missile', 'A
 export const proof = {
   // PROVISÓRIO: o número de clientes ainda não chegou. Quando chegar, preencher clientCount e a cena 3 troca sozinha.
   clientCount: null,
-  feet: { value: 3.5, decimals: 1, suffix: 'M+' },
+  feet: { value: 5, decimals: 0, suffix: 'M+' }, // 01/10 (Armin): 5M+ (antes 3.5M+)
 };
 
 // Imagens por bloco (os textos alternativos ficam em cada idioma).

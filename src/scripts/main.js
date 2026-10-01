@@ -175,15 +175,11 @@ function initTicket(root) {
   };
   const stamp = (n) => {
     stamps[n].classList.add('is-on');
+    if (reduced) return;
     paper.classList.remove('is-hit'); void paper.offsetWidth; paper.classList.add('is-hit');
   };
 
-  if (reduced || !('IntersectionObserver' in window)) {
-    stamps.forEach((s) => s.classList.add('is-static'));
-    setStatus(3); place(xOf(2), 1, false); station = 2;
-    window.addEventListener('resize', () => place(xOf(station), 1, false));
-    return;
-  }
+  // 01/10: roda em todo celular, inclusive com "reduzir movimento" (aí o carimbo só aparece, sem impacto; ver Services.astro)
 
   let timers = [];
   const at = (ms, fn) => timers.push(setTimeout(fn, ms));
@@ -211,10 +207,14 @@ function initTicket(root) {
     next(() => { stamps.forEach((s) => s.classList.add('is-out')); }, 500);
     at(t, cycle);
   }
-  new IntersectionObserver(([e]) => {
-    if (e.isIntersecting) { if (!timers.length) cycle(); }
-    else { stop(); setCurrent(-1); }
-  }, { threshold: 0.25 }).observe(root);
+  // Só anima com a seção na tela. Sem IntersectionObserver (navegador antigo), roda sempre.
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver((entries) => {
+      const e = entries[entries.length - 1];
+      if (e.isIntersecting) { if (!timers.length) cycle(); }
+      else { stop(); setCurrent(-1); }
+    }, { threshold: 0.15 }).observe(root);
+  } else cycle();
   window.addEventListener('resize', () => place(xOf(station), 1, false));
 }
 

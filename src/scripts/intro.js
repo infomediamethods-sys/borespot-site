@@ -75,6 +75,10 @@ function build(stage, lenis) {
   const proofDec = Number(proofBox.dataset.proofDecimals);
   const proofLocale = proofBox.dataset.proofLocale || 'en-US';
   const fmt = (v) => v.toLocaleString(proofLocale, { minimumFractionDigits: proofDec, maximumFractionDigits: proofDec });
+  // 01/10: número pequeno e inteiro (5M+): durante a contagem mostra uma casa decimal (0,1 ... 4,9) e termina em "5"
+  const countText = (v) => (!proofDec && proofTarget < 100 && v < proofTarget - 0.05
+    ? v.toLocaleString(proofLocale, { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+    : fmt(proofDec ? v : Math.round(v)));
   const credit = q('[data-intro-credit]');
 
   /* ---------------- Canvas: mundo ---------------- */
@@ -217,7 +221,7 @@ function build(stage, lenis) {
   function makeUS() {
     const cosLat = Math.cos((38 * Math.PI) / 180);
     const proj = (lon, lat) => [(lon + 96) * cosLat, -(lat - 37.5)];
-    const step = mobile ? 1.05 : 0.78;
+    const step = mobile ? 0.72 : 0.53; // 01/10 (Armin): cerca do dobro de pontos (antes 1,05 e 0,78)
     const pts = [];
     for (let lat = 24.5; lat <= 49.5; lat += step) for (let lon = -125; lon <= -66.5; lon += step / cosLat * 0.92) {
       if (pointInPolygon(lon, lat, US_OUTLINE)) pts.push({ lon, lat, p: proj(lon, lat) });
@@ -570,19 +574,27 @@ function build(stage, lenis) {
       const ms = lerp(1.16, 1, mapIn);
       const cx = usDots[0].cx, cy = usDots[0].cy;
       const tx = (x) => cx + (x - cx) * ms, ty = (y) => cy + (y - cy) * ms;
-      const r0 = mobile ? 1.2 : 1.5;
+      const r0 = mobile ? 1 : 1.25; // pontos um pouco menores com a grade mais densa (antes 1,2 e 1,5)
       ctx.save();
       ctx.globalAlpha = mapIn * (1 - mapOut);
       ctx.fillStyle = 'rgba(115,212,247,0.36)';
-      usDots.forEach((d) => { ctx.fillRect(tx(d.x) - r0, ty(d.y) - r0, r0 * 2, r0 * 2); });
-      // Pontos de cobertura
+      const all = new Path2D();
+      usDots.forEach((d) => { all.rect(tx(d.x) - r0, ty(d.y) - r0, r0 * 2, r0 * 2); });
+      ctx.fill(all);
+      // Pontos de cobertura: um desenho com brilho por grupo (estado), não um por ponto (o brilho é caro no celular)
+      const groups = new Map();
       usDots.forEach((d) => {
         if (d.lit < 0) return;
-        const l = easeOut(seg(p, 0.47 + d.lit * 0.0055, 0.49 + d.lit * 0.0055));
+        let g = groups.get(d.lit);
+        if (!g) { g = new Path2D(); groups.set(d.lit, g); }
+        g.rect(tx(d.x) - r0 * 1.4, ty(d.y) - r0 * 1.4, r0 * 2.8, r0 * 2.8);
+      });
+      ctx.fillStyle = '#44A4EE'; ctx.shadowColor = '#44A4EE'; ctx.shadowBlur = 10;
+      groups.forEach((g, k) => {
+        const l = easeOut(seg(p, 0.47 + k * 0.0055, 0.49 + k * 0.0055));
         if (l <= 0) return;
         ctx.globalAlpha = mapIn * (1 - mapOut) * l;
-        ctx.fillStyle = '#44A4EE'; ctx.shadowColor = '#44A4EE'; ctx.shadowBlur = 10;
-        ctx.fillRect(tx(d.x) - r0 * 1.4, ty(d.y) - r0 * 1.4, r0 * 2.8, r0 * 2.8);
+        ctx.fill(g);
       });
       // Mapa real: a cidade chega como um ponto aceso no lugar de Miami
       if (mode === 'map' && usMiami) {
@@ -730,12 +742,13 @@ function build(stage, lenis) {
   // Desktop 2250vh (total 2350vh), celular 1650vh (total 1750vh). 3x mais lenta que a v2.4, a pedido de Armin (24/09).
   // 01/10: a cena da marca ficou mais longa (linha do tempo vai até TOT, não 100); a rolagem cresce na mesma proporção,
   // então as cenas 1 a 3 continuam com a mesma velocidade de antes e só a marca fica mais lenta.
-  const scrollLen = () => window.innerHeight * (window.innerWidth < 768 ? 16.5 : 22.5) * TOT / 100;
+  // 01/10 (v3, Armin: "rolar muito para chegar no site"): base de 16,5/22,5 telas para 10,5/14 (cerca de 37% menos rolagem).
+  const scrollLen = () => window.innerHeight * (window.innerWidth < 768 ? 10.5 : 14) * TOT / 100;
   const OUT = RM ? { autoAlpha: 0, stagger: 0.25, duration: 2.5, ease: 'power2.in' } : { y: -50, autoAlpha: 0, filter: 'blur(8px)', stagger: 0.25, duration: 2.5, ease: 'power2.in' };
   const IN0 = RM ? { autoAlpha: 0 } : { y: 40, autoAlpha: 0, filter: 'blur(10px)' };
   const IN1 = RM ? { autoAlpha: 1, stagger: 0.35, duration: 3, ease: 'power3.out' } : { y: 0, autoAlpha: 1, filter: 'blur(0px)', stagger: 0.35, duration: 3, ease: 'power3.out' };
   const proxy = { v: 0 };
-  const INTRO_WHEEL = 0.7;
+  const INTRO_WHEEL = 0.8; // 01/10: era 0,7
   const setWheel = (m) => {
     if (!lenis) return;
     lenis.options.wheelMultiplier = m;
@@ -750,9 +763,10 @@ function build(stage, lenis) {
   // Paradas (unidades da linha nova): fim da cena 2 (pins prontos), fim da cena 3 (número e estados) e marca com o brilho.
   const GATES = [toNew(37.5) - 1, toNew(59.5) - 1, toNew(88)];
   const GATE_GESTURES = 2; // gestos para seguir depois de parar: o 1º não mexe, o 2º desce
+  const GATE_SNAP = 1.5; // unidades: gesto novo que começa até essa distância antes da parada já conta como o 1º
   const CUE_STOPS = GATES;
   const CUE_END = 0.96; // linha antiga: depois disso a marca já está indo para o menu
-  const gate = { at: -1, count: 0, restId: -1, relId: -1, relGate: -1 }; // parada atual, gestos contados, gesto que chegou, gesto que liberou
+  const gate = { at: -1, count: 0, restId: -1, relId: -1, relGate: -1, lastMoveId: -1 }; // parada atual, gestos contados, gesto que chegou, gesto que liberou
   function cueUpdate(u) {
     if (u < 0.03) { cue.classList.remove('is-hidden', 'is-keep'); return; }
     if (u < CUE_END) { cue.classList.add('is-keep'); cue.classList.remove('is-hidden'); return; }
@@ -806,7 +820,7 @@ function build(stage, lenis) {
     .to(words(1), OUT, toNew(37.5)).to(reality(1), { y: -30, autoAlpha: 0, duration: 2, ease: 'power2.in' }, toNew(38.5))
     // Cena 3: prova
     .fromTo(scenes[2].querySelector('.scene__num'), { y: 30, autoAlpha: 0, scale: 0.92, transformOrigin: '0 100%' }, { y: 0, autoAlpha: 1, scale: 1, duration: 3, ease: 'power3.out' }, toNew(42.5))
-    .to(proxy, { v: proofTarget, duration: 11, ease: 'power2.out', onUpdate: () => { proofEl.textContent = fmt(proofDec ? proxy.v : Math.round(proxy.v)); } }, toNew(44.5))
+    .to(proxy, { v: proofTarget, duration: 11, ease: 'power2.out', onUpdate: () => { proofEl.textContent = countText(proxy.v); } }, toNew(44.5))
     .fromTo(words(2), IN0, { ...IN1, stagger: 0.25 }, toNew(45))
     .fromTo(scenes[2].querySelector('.scene__small'), { y: 12, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 2.5, ease: 'power3.out' }, toNew(49))
     .to([scenes[2].querySelector('.scene__num'), ...words(2), scenes[2].querySelector('.scene__small')], { ...OUT, stagger: 0.15 }, toNew(60))
@@ -912,8 +926,8 @@ function build(stage, lenis) {
   // soltar é calculado aqui, pela velocidade do dedo (px/ms), mais curto que o embalo nativo do celular, que atravessava
   // várias cenas num deslize só. Fora da intro (da hero para baixo) o toque volta a ser o nativo, como antes.
   // O embalo do próprio Lenis depende da taxa de quadros da tela (60 ou 120 Hz), por isso não é usado.
-  const FLING = 420;                                   // ms: distância do embalo = velocidade do dedo × FLING
-  const FLING_MAX = () => window.innerHeight * 1.6;    // embalo máximo por deslize
+  const FLING = 480;                                   // ms: distância do embalo = velocidade do dedo × FLING
+  const FLING_MAX = () => window.innerHeight * 1.8;    // embalo máximo por deslize
   const samples = [];                                  // posições recentes do dedo [tempo, y]
   window.addEventListener('touchmove', (e) => {
     const t = now(); samples.push([t, e.touches[0].clientY]);
@@ -953,6 +967,16 @@ function build(stage, lenis) {
         const i = GATES.findIndex((g, k) => gateY(g) >= tgt - 0.5 && !(cur.id === gate.relId && k === gate.relGate));
         if (i >= 0) {
           const gy = gateY(GATES[i]);
+          // Gesto novo que começa quase na parada (o anterior parou um pouco antes): encosta na parada e já conta
+          // como o 1º gesto, para não precisar de um gesto a mais (01/10)
+          const near = tgt >= gy - gateY(GATE_SNAP) + gateY(0) && tgt < gy - 0.5 && cur.id !== gate.lastMoveId;
+          if (near && !cur.counted) {
+            cur.counted = true; gate.at = i; gate.count = 1; gate.restId = -1; showKeep();
+            step = gy - tgt;
+            if (isEnd) return fling(step);
+            data.deltaY = step; return true;
+          }
+          if (near) return hold();
           if (tgt < gy - 0.5) {
             if (tgt + step > gy) {
               gate.at = i; gate.count = 0; gate.restId = cur.id;
@@ -960,6 +984,7 @@ function build(stage, lenis) {
               if (isEnd) return fling(step);
               data.deltaY = step; return true;
             }
+            gate.lastMoveId = cur.id;
           } else {
             if (cur.id !== gate.restId && !cur.counted) {
               cur.counted = true;
