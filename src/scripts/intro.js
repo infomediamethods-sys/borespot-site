@@ -759,7 +759,7 @@ function build(stage, lenis) {
   measure();
 
   // Aviso de rolagem (01/10): aparece no começo como "Swipe up"; depois fica sempre presente como "Keep swiping up",
-  // menor e pulsando no mesmo lugar até o fim da intro. Tocar nele leva até a próxima parte.
+  // menor e pulsando no mesmo lugar até o fim da intro. 01/10 (Armin): só visual, não clica.
   // Paradas (unidades da linha nova): fim da cena 2 (pins prontos), fim da cena 3 (número e estados) e marca com o brilho.
   const GATES = [toNew(37.5) - 1, toNew(59.5) - 1, toNew(88)];
   const GATE_GESTURES = 2; // gestos para seguir depois de parar: o 1º não mexe, o 2º desce
@@ -767,27 +767,16 @@ function build(stage, lenis) {
   // e ficava preso na parada. Agora, depois de GATE_DWELL ms parado ali, rolar mais GATE_PUSH px também libera.
   const GATE_DWELL = 1200;
   const GATE_PUSH = 300;
-  const GATE_SNAP = 1.5; // unidades: gesto novo que começa até essa distância antes da parada já conta como o 1º
-  const CUE_STOPS = GATES;
+  const GATE_SNAP = 1.5;
+  const HOLD_MAX = 1300; // ms de insistência segurada numa parada que sempre liberam (rede de segurança) // unidades: gesto novo que começa até essa distância antes da parada já conta como o 1º
   const CUE_END = 0.96; // linha antiga: depois disso a marca já está indo para o menu
-  const gate = { at: -1, count: 0, restId: -1, relId: -1, relGate: -1, lastMoveId: -1, since: 0, acc: 0, prevId: -1, prevAbs: 0 }; // parada atual, gestos contados, gesto que chegou, gesto que liberou
+  const gate = { at: -1, count: 0, restId: -1, relId: -1, relGate: -1, lastMoveId: -1, since: 0, acc: 0, prevId: -1, prevAbs: 0, heldGate: -1, held: 0, heldLast: 0 }; // parada atual, gestos contados, gesto que chegou, gesto que liberou
   function cueUpdate(u) {
     if (u < 0.03) { cue.classList.remove('is-hidden', 'is-keep'); return; }
     if (u < CUE_END) { cue.classList.add('is-keep'); cue.classList.remove('is-hidden'); return; }
     cue.classList.add('is-hidden');
   }
   const showKeep = () => { cue.classList.add('is-keep'); cue.classList.remove('is-hidden'); };
-  cue.addEventListener('click', () => {
-    const st = tl.scrollTrigger;
-    if (!st) return;
-    const n = st.progress * TOT;
-    const next = CUE_STOPS.find((x) => x > n + 0.5);
-    const y = next === undefined ? Math.ceil(st.end) + 1 : st.start + (next / TOT) * (st.end - st.start);
-    const dur = Math.min(4, Math.max(1.6, Math.abs(y - window.scrollY) / 2000));
-    gate.at = next === undefined ? -1 : CUE_STOPS.indexOf(next); gate.count = 0; gate.restId = -1; gate.relId = -1; gate.since = now() + dur * 1000; gate.acc = 0;
-    if (lenis) lenis.scrollTo(y, { duration: dur, easing: (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2) });
-    else window.scrollTo({ top: y, behavior: 'smooth' });
-  });
 
   const tl = gsap.timeline({
     defaults: { ease: 'none' },
@@ -958,34 +947,54 @@ function build(stage, lenis) {
       if (isTouch && !lenis.options.syncTouch) return true;
       if (!isWheel && !isTouch) return true;
       const isEnd = isTouch && ev.type === 'touchend';
+      // Toque novo enquanto a página desliza até uma parada: não deixa o Lenis zerar esse deslize (ele zera no toque),
+      // senão a página fica antes da parada (01/10)
+      if (isTouch && ev.type === 'touchstart' && gate.at >= 0 && lenis.isScrolling && Math.abs(lenis.targetScroll - gateY(GATES[gate.at])) < 1) return false;
       if (isEnd) noLenisInertia();
       if (!data.deltaY && !isEnd) return true;
       let step = isEnd ? flingDist() : data.deltaY;
       if (!step) return true;
       const dir = isWheel ? trackWheel(step) : Math.sign(step), end = endY(), tgt = lenis.targetScroll;
-      const fling = (d) => { if (d > 0.5 || d < -0.5) queueMicrotask(() => lenis.scrollTo(lenis.targetScroll + d, { lerp: 0.075 })); return true; };
+      const fling = (d, lerp = 0.075) => { if (d > 0.5 || d < -0.5) queueMicrotask(() => lenis.scrollTo(lenis.targetScroll + d, { lerp })); return true; };
       const hold = () => { if (ev.cancelable) ev.preventDefault(); return isEnd ? true : false; };
+      // Saída garantida no toque (01/10): se a pessoa insiste por mais de HOLD_MAX ms somando todo o arrasto/rolagem segurado
+      // nesta parada, ela libera, aconteça o que acontecer com a contagem de gestos (celulares diferentes, toques
+      // interrompidos, um dedo que não sai da tela). Pausas não contam: cada evento soma no máximo 50 ms.
+      const holdAt = (i) => {
+        if (gate.heldGate !== i) { gate.heldGate = i; gate.held = 0; gate.heldLast = 0; }
+        const t = now();
+        if (isTouch && !isEnd && cur.id !== gate.restId) gate.held += gate.heldLast ? Math.min(50, t - gate.heldLast) : 16; // só toque: a roda já tem a regra da rolagem contínua, e o embalo do trackpad não pode contar
+        gate.heldLast = t;
+        if (gate.held >= HOLD_MAX) { gate.relId = cur.id; gate.relGate = i; gate.count = 0; gate.at = -1; gate.held = 0; return true; }
+        return hold();
+      };
       // Paradas no fim de cada cena (01/10): descendo, a rolagem para ali e o resto do embalo é descartado;
       // o 1º gesto novo não mexe (o aviso "Keep scrolling" aparece) e o 2º segue
       if (dir > 0 && lockState === 'free') {
         const i = GATES.findIndex((g, k) => gateY(g) >= tgt - 0.5 && !(cur.id === gate.relId && k === gate.relGate));
         if (i >= 0) {
           const gy = gateY(GATES[i]);
-          // Gesto novo que começa quase na parada (o anterior parou um pouco antes): encosta na parada e já conta
-          // como o 1º gesto, para não precisar de um gesto a mais (01/10)
-          const near = tgt >= gy - gateY(GATE_SNAP) + gateY(0) && tgt < gy - 0.5 && cur.id !== gate.lastMoveId;
+          // Gesto novo que começa antes da parada, perto dela (o anterior parou um pouco antes) ou logo depois de uma
+          // chegada nela (no celular, o toque novo interrompe o deslize que levava a página até a parada): leva a página
+          // até a parada e conta como mais um gesto. Antes a contagem voltava para 1 (ou 0) a cada toque que interrompia
+          // o deslize, e quem deslizava rápido ficava preso na parada (01/10).
+          const justArrived = gate.at === i && cur.id !== gate.restId && now() - gate.since < 5000 && tgt >= gy - window.innerHeight * 2.5;
+          const near = (justArrived || tgt >= gy - gateY(GATE_SNAP) + gateY(0)) && tgt < gy - 0.5 && cur.id !== gate.lastMoveId;
           if (near && !cur.counted) {
-            cur.counted = true; gate.at = i; gate.count = 1; gate.restId = -1; gate.since = now(); gate.acc = 0; showKeep();
-            step = gy - tgt;
-            if (isEnd) return fling(step);
-            data.deltaY = step; return true;
+            cur.counted = true;
+            if (gate.at !== i) { gate.at = i; gate.count = 0; gate.since = now(); gate.acc = 0; }
+            gate.restId = -1; gate.count += 1;
+            if (gate.count >= GATE_GESTURES) { gate.relId = cur.id; gate.relGate = i; gate.count = 0; gate.at = -1; return true; }
+            showKeep();
+            if (isTouch) { queueMicrotask(() => lenis.scrollTo(gy, { lerp: 0.16 })); return holdAt(i); }
+            data.deltaY = gy - tgt; return true;
           }
-          if (near) return hold();
+          if (near) return holdAt(i);
           if (tgt < gy - 0.5) {
             if (tgt + step > gy) {
-              gate.at = i; gate.count = 0; gate.restId = cur.id; gate.since = now(); gate.acc = 0;
+              gate.at = i; gate.count = 0; gate.restId = cur.id; gate.since = now(); gate.acc = 0; gate.heldGate = -1;
               step = gy - tgt;
-              if (isEnd) return fling(step);
+              if (isEnd) return fling(step, 0.13);
               data.deltaY = step; return true;
             }
             gate.lastMoveId = cur.id;
@@ -1009,7 +1018,7 @@ function build(stage, lenis) {
               if (gate.count >= GATE_GESTURES) { gate.relId = cur.id; gate.relGate = i; gate.count = 0; gate.at = -1; }
               else showKeep();
             }
-            if (!released()) return hold();
+            if (!released()) return holdAt(i);
           }
         }
       }

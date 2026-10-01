@@ -25,18 +25,12 @@ const book = bookingHref(lang, true);
             <a class="btn btn--primary" href={book} data-book>{t.hero.cta}<Icon name="arrow" /></a>
           </div>
         </div>
-        <!-- Imagens do produto (substituem o painel em código em 25/09, a pedido de Armin). Cópias sem o fundo branco, feitas a partir
-             das originais em public/img/product/*-white.png. Desktop e tablet: cards em pé ao lado do mockup; celular: cards deitados embaixo. -->
+        <!-- Imagem do produto. 01/10 (Armin): mockup novo (tablet + iPhone, BoreSpot_Mockup_Option_1), recortado do fundo branco;
+             saem os cards de informações que ficavam ao lado (computador) e embaixo (celular). Só o mockup, nos dois. -->
         <div class="hero__panel hero-product" data-hero-panel data-hero-product role="img" aria-label={t.hero.panelLabel}>
-          <img class="hero-product__mockup" src={withBase('/img/product/bore-spot-mockup-tablet-iphone-1200.webp')}
-            srcset={`${withBase('/img/product/bore-spot-mockup-tablet-iphone-800.webp')} 800w, ${withBase('/img/product/bore-spot-mockup-tablet-iphone-1200.webp')} 1200w`}
-            sizes="(min-width: 1024px) 40vw, (min-width: 768px) 70vw, 92vw" width="1200" height="837" alt="" fetchpriority="high" decoding="async" />
-          <img class="hero-product__cards hero-product__cards--v" src={withBase('/img/product/bore-spot-cards-vertical-480.webp')}
-            srcset={`${withBase('/img/product/bore-spot-cards-vertical-320.webp')} 320w, ${withBase('/img/product/bore-spot-cards-vertical-480.webp')} 480w`}
-            sizes="(min-width: 1024px) 12vw, 20vw" width="480" height="1218" alt="" decoding="async" />
-          <img class="hero-product__cards hero-product__cards--h" src={withBase('/img/product/bore-spot-cards-horizontal-900.webp')}
-            srcset={`${withBase('/img/product/bore-spot-cards-horizontal-900.webp')} 900w, ${withBase('/img/product/bore-spot-cards-horizontal-1400.webp')} 1400w`}
-            sizes="92vw" width="900" height="204" alt="" decoding="async" loading="lazy" />
+          <img class="hero-product__mockup" src={withBase('/img/product/bore-spot-mockup-v2-984.webp')}
+            srcset={`${withBase('/img/product/bore-spot-mockup-v2-640.webp')} 640w, ${withBase('/img/product/bore-spot-mockup-v2-984.webp')} 984w`}
+            sizes="(min-width: 1024px) 46vw, (min-width: 768px) 80vw, 92vw" width="984" height="614" alt="" fetchpriority="high" decoding="async" />
         </div>
       </div>
     </div>
@@ -82,14 +76,14 @@ const book = bookingHref(lang, true);
         <ol class="intro__steps" data-intro-steps>
           <li class="is-on"></li><li></li><li></li><li></li>
         </ol>
-        <button type="button" class="intro__cue" data-intro-cue aria-label={t.ui.cueLabel}>
+        <div class="intro__cue" data-intro-cue aria-hidden="true">
           <span class="cue__icon cue__icon--mouse" aria-hidden="true"><svg viewBox="0 0 20 30" width="20" height="30"><rect x="1.5" y="1.5" width="17" height="27" rx="8.5" fill="none" stroke="currentColor" stroke-width="2"/><circle class="cue__wheel" cx="10" cy="9" r="2.2" fill="currentColor"/></svg></span>
           <span class="cue__icon cue__icon--touch" aria-hidden="true"><svg viewBox="0 0 22 34" width="22" height="34"><path d="M5 9l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle class="cue__finger" cx="11" cy="27" r="4.5" fill="currentColor"/></svg></span>
           <span class="cue__txt">
             <span class="cue__t cue__t--mouse">{t.ui.scroll}</span><span class="cue__t cue__t--touch">{t.ui.swipe}</span>
             <span class="cue__t cue__t--mouse cue__t--keep">{t.ui.keepScroll}</span><span class="cue__t cue__t--touch cue__t--keep">{t.ui.keepSwipe}</span>
           </span>
-        </button>
+        </div>
       </div>
     </div>
 
@@ -117,9 +111,8 @@ const book = bookingHref(lang, true);
   .hero__ctas .btn { white-space: normal; text-align: left; line-height: 1.25; max-width: 100%; }
   /* Imagens do produto: mockup à esquerda e cards em pé à direita; no celular, cards deitados embaixo do mockup */
   /* Colunas 2,8 : 1 deixam os cards um pouco mais altos que o mockup */
-  .hero-product { display: grid; grid-template-columns: minmax(0, 2.8fr) minmax(0, 1fr); align-items: center; gap: clamp(8px, 1.2vw, 18px); min-height: 0; }
+  .hero-product { display: grid; grid-template-columns: minmax(0, 1fr); align-items: center; min-height: 0; }
   .hero-product img { display: block; width: 100%; height: auto; }
-  .hero-product .hero-product__cards--h { display: none; }
 
   /* INTRO */
   .intro { display: none; }
@@ -166,16 +159,14 @@ const book = bookingHref(lang, true);
   .intro__steps li { width: 20px; height: 2px; background: rgba(255, 255, 255, .28); transition: width .35s var(--ease-out), background .35s; }
   .intro__steps li.is-on { width: 36px; background: var(--sky); }
   /* Aviso de rolagem (01/10): pílula clicável, maior e mais clara. Computador: mouse e "Scroll down".
-     Celular (tela de toque): seta e dedo subindo e "Swipe up". Tocar avança para a próxima parte da intro.
+     Celular (tela de toque): seta e dedo subindo e "Swipe up". 01/10 (Armin): só visual, não é botão (não clica, não avança).
      A primeira chamada fica maior; depois vira "Keep swiping up", menor, fixo no mesmo lugar e pulsando. */
   .intro__cue { position: absolute; left: 50%; bottom: calc(24px + var(--bar, 0px) + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
     display: inline-flex; align-items: center; gap: 12px; padding: 10px 20px 10px 14px; border: 1px solid rgba(199, 218, 235, .4); border-radius: 999px;
     background: rgba(3, 16, 43, .55); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); color: var(--white);
-    font: 700 15px/1.2 var(--font); letter-spacing: .01em; white-space: nowrap; cursor: pointer; pointer-events: auto;
+    font: 700 15px/1.2 var(--font); letter-spacing: .01em; white-space: nowrap; cursor: default; pointer-events: none; user-select: none; -webkit-user-select: none;
     transition: opacity .45s var(--ease-out), border-color .2s, background-color .2s, padding .25s var(--ease-out), font-size .25s var(--ease-out); }
-  .intro__cue:hover { border-color: rgba(199, 218, 235, .75); background: rgba(6, 28, 70, .75); }
-  .intro__cue:focus-visible { outline: 2px solid var(--sky); outline-offset: 3px; }
-  .intro__cue.is-hidden { opacity: 0; pointer-events: none; }
+  .intro__cue.is-hidden { opacity: 0; }
   .intro__cue.is-keep { gap: 9px; padding: 8px 16px 8px 12px; font-size: 13px; animation: cuePulse 1.7s ease-in-out infinite; }
   .cue__icon { display: grid; flex: none; color: var(--sky); }
   .cue__icon svg { display: block; max-width: none; }
@@ -214,10 +205,8 @@ const book = bookingHref(lang, true);
     .hero__title { font-size: clamp(25px, 7.2vw, 34px); }
     .hero__sub { font-size: 16px; }
     .hero__ctas .btn { min-height: 46px; padding: 11px 14px; font-size: 15px; white-space: normal; text-align: left; line-height: 1.25; max-width: 100%; }
-    .hero-product { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) auto; align-content: center; gap: 10px; }
+    .hero-product { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr); align-content: center; }
     .hero-product img.hero-product__mockup { width: auto; max-width: 100%; max-height: 100%; min-height: 0; object-fit: contain; justify-self: center; }
-    .hero-product .hero-product__cards--v { display: none; }
-    .hero-product .hero-product__cards--h { display: block; width: 100%; }
     .intro__steps { display: none; }
     .scene { top: calc(var(--nav-h) + 4vh); gap: 16px; }
     .scene__promise { font-size: clamp(32px, 9.4vw, 44px); }
