@@ -91,6 +91,8 @@ const INK = ['blue', 'blue', 'blue', 'green', 'green', 'red', 'red', 'green'];
   .tstamp.big { font-size: 26px; padding: 7px 16px; border-width: 3px; letter-spacing: .18em; }
   .tstamp.is-on { animation: tktthump .38s cubic-bezier(.2, .9, .25, 1.25) forwards; }
   .tstamp.is-static { opacity: .9; transform: translate(-50%, -50%) rotate(var(--r)); }
+  .tstamp.is-on.is-out { animation: tktout .45s ease forwards; } /* 01/10: no fim do ciclo os carimbos somem (o cartão fica) */
+  @keyframes tktout { from { opacity: .9; transform: translate(-50%, -50%) rotate(var(--r)) scale(1); } to { opacity: 0; transform: translate(-50%, -50%) rotate(var(--r)) scale(1); } }
   @keyframes tktthump { 0% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--r)) scale(1.9); } 60% { opacity: .95; } 100% { opacity: .9; transform: translate(-50%, -50%) rotate(var(--r)) scale(1); } }
   /* 30/09 (computador, layout mais encaixado): título à esquerda e ticket à direita, como na seção "Built for underground
      work"; o cartão fica parado e a fase acesa é a da linha do tempo logo abaixo. */

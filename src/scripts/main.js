@@ -188,33 +188,34 @@ function initTicket(root) {
   let timers = [];
   const at = (ms, fn) => timers.push(setTimeout(fn, ms));
   const stop = () => { timers.forEach(clearTimeout); timers = []; };
-  const side = () => (travels() ? 60 : 36);
+  // 01/10 (Armin): sem entrada e saída do cartão (fica sempre parado no lugar) e carimbos um pouco mais rápidos
+  // (intervalo de 750 para 580 ms). No fim, os carimbos somem e o ciclo recomeça no mesmo cartão.
+  const GAP = 580;
+  place(xOf(0), 1, false);
   function cycle() {
     stop();
-    stamps.forEach((s) => s.classList.remove('is-on'));
-    setStatus(0); setCurrent(-1); station = 0;
-    place(xOf(0) - side(), 0, false);
-    at(80, () => { place(xOf(0), 1, true); setCurrent(0); });
-    at(1100, () => stamp(0));
-    at(1850, () => { stamp(1); setStatus(1); });
-    at(2600, () => stamp(2));
-    at(3300, () => { station = 1; place(xOf(1), 1, true); });
-    at(3900, () => setCurrent(1));
-    at(4700, () => { stamp(3); setStatus(2); });
-    at(5450, () => stamp(4));
-    at(6200, () => { station = 2; place(xOf(2), 1, true); });
-    at(6800, () => setCurrent(2));
-    at(7600, () => stamp(5));
-    at(8350, () => stamp(6));
-    at(9300, () => { stamp(7); setStatus(3); });
-    at(11200, () => { place(xOf(2) + side(), 0, true); setCurrent(-1); });
-    at(12300, cycle);
+    stamps.forEach((s) => s.classList.remove('is-on', 'is-out'));
+    setStatus(0); setCurrent(0); station = 0;
+    let t = 600;
+    const next = (fn, gap = GAP) => { at(t, fn); t += gap; };
+    next(() => stamp(0));
+    next(() => { stamp(1); setStatus(1); });
+    next(() => stamp(2), GAP + 10);
+    next(() => setCurrent(1), GAP - 30);
+    next(() => { stamp(3); setStatus(2); });
+    next(() => stamp(4), GAP + 10);
+    next(() => setCurrent(2), GAP - 30);
+    next(() => stamp(5));
+    next(() => stamp(6), GAP + 170);
+    next(() => { stamp(7); setStatus(3); }, 2300);  // fechado: fica na tela para ler
+    next(() => { stamps.forEach((s) => s.classList.add('is-out')); }, 500);
+    at(t, cycle);
   }
   new IntersectionObserver(([e]) => {
     if (e.isIntersecting) { if (!timers.length) cycle(); }
     else { stop(); setCurrent(-1); }
   }, { threshold: 0.25 }).observe(root);
-  window.addEventListener('resize', () => place(xOf(station), card.style.opacity || 0, false));
+  window.addEventListener('resize', () => place(xOf(station), 1, false));
 }
 
 /* Por que a Bore Spot (30/09): a central. A equipe da Bore Spot no meio; à esquerda quem é do cliente, à direita quem
